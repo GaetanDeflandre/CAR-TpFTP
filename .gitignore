@@ -1,7 +1,6 @@
 # Object files
 *.o
 *.ko
-*.obj
 *.elf
 
 # Precompiled Headers
@@ -27,3 +26,8 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Trash file
+*~
+\#*\#
+nul
