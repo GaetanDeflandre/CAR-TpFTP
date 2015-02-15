@@ -8,5 +8,7 @@ Serveur FTP
  - Gaëtan DEFLANDRE
 
 
-## ITDID & TODO & autres
+## Remarques
 
+Pour le moment ca compile avec la nouvelle structure
+mais en les flags W*

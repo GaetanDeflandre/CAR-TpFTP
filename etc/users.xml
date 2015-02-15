@@ -1,0 +1,15 @@
+<?xml version = "1.0" encoding="UTF-8" standalone="yes" ?>
+
+<database>
+
+  <user>
+    <login>admin</login>
+    <password>admin</password>
+  </user>
+
+  <user>
+    <login>toto</login>
+    <password>mdp</password>
+  </user>
+  
+</database>
