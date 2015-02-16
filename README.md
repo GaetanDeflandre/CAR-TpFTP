@@ -10,5 +10,4 @@ Serveur FTP
 
 ## Remarques
 
-Pour le moment ca compile avec la nouvelle structure
-mais en les flags W*
+Compile avec tous les flags, implémentation de la base de données.
