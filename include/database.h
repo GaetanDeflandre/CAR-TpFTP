@@ -7,6 +7,8 @@
  * la base.
  */
 
+#define DATABASE_FILE "etc/database.xml"
+
 /**
  * @struct user_s 
  * @brief La paire login et mot de passe de l'utilisateur. 

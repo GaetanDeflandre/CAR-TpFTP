@@ -31,9 +31,9 @@ BINDIR	= bin
 ETCDIR	= etc
 DOCDIR	= doc  
 
-SOURCES	 = servFTP.c #cmdHandler.c command.c
-TESTS 	 = #testServFTP.c
-BINARIES = servFTP #testServFTP
+SOURCES	 = servFTP.c cmdHandler.c command.c database.c
+TESTS 	 = testServFTP.c
+BINARIES = servFTP testServFTP
 HEADERS  = ${SOURCE:.c=.h}
 OBJECTS  = ${SOURCE:.c=.o}
 #OBJECTS += ${TESTS:.c=.o}
@@ -57,10 +57,11 @@ all: $(BINPATHS) $(OBJPATHS) $(RESSOURCES)
 ### Make binaries
 ###------------------------------------------------------------
 bin/servFTP: obj/servFTP.o | $(BINDIR)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-bin/testServFTP: obj/testServFTP.o | $(BINDIR)
-	@ echo "$@ not yet"
+bin/testServFTP: \
+	obj/testServFTP.o obj/database.o  | $(BINDIR)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 
 ###------------------------------
@@ -76,11 +77,15 @@ bin:
 obj/servFTP.o:		src/servFTP.c include/servFTP.h
 obj/cmdHandler.o:	src/cmdHandler.c include/cmdHandler.h
 obj/command.o:		src/commad.c include/command.c
+obj/database.o:		src/database.c include/database.h
 
-obj/testServFTP.c:	$(SRCPATHS) $(INCPATHS) $(TESTPATHS)
+obj/testServFTP.o:	$(SRCPATHS) $(INCPATHS) $(TESTPATHS)
 
 
 obj/%.o: src/%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ -c $<
+
+obj/%.o: test/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ -c $<
 
 
