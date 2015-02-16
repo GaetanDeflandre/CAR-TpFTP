@@ -7,12 +7,12 @@
 ### Compile options
 ###------------------------------------------------------------
 CC	= gcc
-#CFLAGS	= -Wall -Werror #-Wextra
-#CFLAGS  += -ansi -pedantic -O3
-#CFLAGS	+= -pipe -std=c11
-CFLAGS	+= -g
+CFLAGS	= -Wall -Werror -Wextra
+CFLAGS  += -ansi -pedantic -O3
+CFLAGS	+= -pipe -std=c11
+CFLAGS	+= -g `xml2-config --cflags`
 
-LDFLAGS = 
+LDFLAGS = `xml2-config --libs`
 
 TRASHFILE = *.gch *~ \#*\# nul
 RM	  = rm -f
@@ -44,7 +44,7 @@ TESTPATHS= ${addprefix $(TESTDIR)/, $(TESTS)}
 OBJPATHS = ${addprefix $(OBJDIR)/, $(OBJECTS)}
 BINPATHS = ${addprefix $(BINDIR)/, $(BINARIES)}
 
-RESSOURCES = users.xml
+RESSOURCES = etc/database.xml
 
 
 ###------------------------------
