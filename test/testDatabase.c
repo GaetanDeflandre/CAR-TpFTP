@@ -7,14 +7,15 @@
 
 
 void test_all_database();
-void test_get_use_info();
-
+void test_get_use_info_user_founded();
+void test_get_use_info_user_not_founded();
 
 void test_all_database(){
-    test_get_use_info();
+    test_get_use_info_user_founded();
+    test_get_use_info_user_not_founded();
 }
 
-void test_get_use_info(){
+void test_get_use_info_user_founded(){
 
     /* wordking case*/
 
@@ -28,7 +29,21 @@ void test_get_use_info(){
     assert(strcmp(mdp, "testmdp") == 0);
     assert(strcmp(path, "files/test") == 0);
 
-    printf("OK: get_user_info");
+    printf("OK: get_user_info, cas utilisateur trouvé.\n");
+}
+
+void test_get_use_info_user_not_founded(){
+
+
+    char* mdp;
+    char* path;
+    int status;
+    
+    status = get_user_info("_", &mdp, &path);
+
+    assert(status == 0);
+
+    printf("OK: get_user_info, cas utilisateur non trouvé.\n");
 }
 
 
@@ -41,7 +56,7 @@ int main(int argc, char *argv[]){
 
     test_all_database();
 
-    printf("\nOK: all database fonctions\n");
+    printf("\nOK: fonctions de database.\n");
 
     exit(EXIT_SUCCESS);
 }
