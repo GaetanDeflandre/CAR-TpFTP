@@ -18,12 +18,13 @@ void usage(char* name){
 }
 
 int main(int argc, char* argv[]){
-    int listenfd, clientfd, status; 
+    int listenfd, clientfd, status;
+    int sock_opt_reuse_addr = 1;
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
     socklen_t sock_len;
     
-    char buf[BUF_SIZE];  
+    char buf[BUF_SIZE+1]; // +1 pour '\0'
 
     if(argc != 1){
 	usage(argv[0]);
@@ -31,6 +32,7 @@ int main(int argc, char* argv[]){
     }
     
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &sock_opt_reuse_addr, sizeof(int));
     
     if (listenfd == -1){
 	perror("Erreur socket: ");
