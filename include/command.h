@@ -21,7 +21,7 @@ typedef void (cmd_handler)(struct s_cmd *);
 struct s_cmd
 {
 	cmd_handler * cmd_h;
-	char * cmd_args;
+	char * cmd_args_field;
 	enum cmd_type cmd_t;
 	struct s_client * cmd_client;
 };

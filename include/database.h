@@ -17,7 +17,7 @@
 /** Longueur maximum pour un mot de passe */
 #define PASSWORD_MAXLEN 126
 /** Longueur maximum pour le nom de répertoire d'un utilisateur */
-#define PATHNAME_MAXLEN 126
+#define PATHNAME_MAXLEN 1024
 
 /**
  * Recherche l'utilisateur \a name dans la base de donnée.

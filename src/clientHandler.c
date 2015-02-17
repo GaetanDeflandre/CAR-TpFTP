@@ -18,7 +18,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	int req_size;
 	
 	// Création de la structure client.
-	memset(client.cli_current_path, 0, MAX_PATH_LEN);
+	memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 	client.cli_sock = socket;
 	client.cli_addr = client_addr;
 	client.cli_data_port = client.cli_addr.sin_port;
@@ -32,26 +32,34 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 		exit(EXIT_FAILURE);
     }
     
-    req_size = read_client_request(client.cli_sock, &request);
-    printf("Size of request: %d\nRequest: %s\n", req_size, request);
-    
-    cmd = init_cmd(request, &client);
-    if (cmd != NULL)
-		exec_cmd(cmd);
-	else
-		fprintf(stderr, "Erreur cmd\n");
-    
-    snprintf(buf, BUF_SIZE, "230\r\n");
-    
-    if(write(client.cli_sock, buf, strlen(buf)) == -1)
+    while(1)
     {
-	perror("Erreur write: ");
-	exit(EXIT_FAILURE);
-    }
-    
-    close(client.cli_sock);
-    
-    return;
+		/* Lecture requete */
+		req_size = read_client_request(client.cli_sock, &request);
+		printf("Size of request: %d\nRequest: %s\n", req_size, request);
+		
+		/* Traitement de la requete */
+		cmd = init_cmd(request, &client);
+		if (cmd != NULL)
+			exec_cmd(cmd);
+		else
+		{
+			fprintf(stderr, "Erreur cmd\n");
+			close_connection(&client);
+		}
+			
+		if (cmd->cmd_t == CMD_QUIT)
+			return;
+		
+		/* TODO Reponse au client */
+		snprintf(buf, BUF_SIZE, "230\r\n");
+		
+		if(write(client.cli_sock, buf, strlen(buf)) == -1)
+		{
+			perror("Erreur write: ");
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 ssize_t read_client_request(int sockfd, char **request)
@@ -100,4 +108,11 @@ ssize_t read_client_request(int sockfd, char **request)
     (*request)[nb_written_char] = '\0';
     
     return strlen(*request);
+}
+
+void close_connection(struct s_client * client)
+{
+	close(client->cli_sock);
+	
+	return;
 }
