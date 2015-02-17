@@ -6,12 +6,16 @@
 #include <unistd.h>
 #include <string.h>
 
+ssize_t read_client_request(int sockfd, char **request);
+//ssize_t write_reply(int sockfd, char *reply);
+
 void handle_client(struct sockaddr_in client_addr, int socket)
 {
 	struct s_client client;
-	struct s_cmd * cmd;
+	struct s_cmd * cmd = NULL;
 	char buf[BUF_SIZE+1]; // +1 pour '\0'
-	ssize_t nb_bytes_read;
+	char * request = NULL;
+	int req_size;
 	
 	// Création de la structure client.
 	memset(client.cli_current_path, 0, MAX_PATH_LEN);
@@ -21,26 +25,26 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	client.cli_data_transfer_t = NORMAL_DT;
 	
 	/* Salutations au client */
-	snprintf(buf, sizeof(buf), "220 Service ready\r\n");
-    if(write(client.cli_sock, buf, strlen(buf)) == -1){
+	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
+    if(write(client.cli_sock, buf, strlen(buf)) == -1)
+    {
 		perror("Erreur write: ");
 		exit(EXIT_FAILURE);
     }
-
-    if((nb_bytes_read = read(client.cli_sock, buf, BUF_SIZE)) == -1){
-		perror("Erreur read: ");
-		exit(EXIT_FAILURE);
-    }
     
-    cmd = init_cmd(buf, &client);
+    req_size = read_client_request(client.cli_sock, &request);
+    printf("Size of request: %d\nRequest: %s\n", req_size, request);
+    
+    cmd = init_cmd(request, &client);
     if (cmd != NULL)
 		exec_cmd(cmd);
 	else
-		printf("Erreur cmd\n");
+		fprintf(stderr, "Erreur cmd\n");
     
-    snprintf(buf, sizeof(buf), "230\r\n");
+    snprintf(buf, BUF_SIZE, "230\r\n");
     
-    if(write(client.cli_sock, buf, strlen(buf)) == -1){
+    if(write(client.cli_sock, buf, strlen(buf)) == -1)
+    {
 	perror("Erreur write: ");
 	exit(EXIT_FAILURE);
     }
@@ -48,4 +52,52 @@ void handle_client(struct sockaddr_in client_addr, int socket)
     close(client.cli_sock);
     
     return;
+}
+
+ssize_t read_client_request(int sockfd, char **request)
+{
+	char buf[BUF_SIZE+1]; // +1 pour '\0'
+	ssize_t nb_bytes_read, remaining_space;
+	int nb_written_char, request_size;
+	
+	/* Allocation d'une nouvelle zone memoire */
+	free(*request);
+	remaining_space = request_size = 10;
+	nb_written_char = 0;
+	*request = (char *) malloc(remaining_space+1 * sizeof(char));
+	if (*request == NULL)
+	{
+		perror("Erreur malloc: ");
+		exit(EXIT_FAILURE);
+	}
+	
+	do
+	{
+		nb_bytes_read = read(sockfd, buf, BUF_SIZE);
+		if(nb_bytes_read == -1)
+		{
+			perror("Erreur read: ");
+			exit(EXIT_FAILURE);
+		}
+		
+		if (nb_bytes_read > remaining_space)
+		{
+			*request = (char *) realloc(*request, nb_written_char + nb_bytes_read + request_size);
+			if (*request == NULL)
+			{
+				perror("Erreur realloc: ");
+				exit(EXIT_FAILURE);
+			}
+		}
+		
+		memcpy((*request) + nb_written_char, buf, nb_bytes_read);
+		nb_written_char += nb_bytes_read;
+		remaining_space -= nb_bytes_read;
+		
+	} while(buf[nb_bytes_read - 2] != '\r' || buf[nb_bytes_read - 1] !='\n');
+	/* Test de fin de requete (\r\n à la fin). */
+    
+    (*request)[nb_written_char] = '\0';
+    
+    return strlen(*request);
 }

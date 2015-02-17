@@ -19,7 +19,7 @@ enum data_transfer_type {NORMAL_DT, PASSIVE_DT};
  * client. */
 struct s_client
 {
-	char cli_current_path[4096];
+	char cli_current_path[MAX_PATH_LEN];
 	int cli_sock;
 	struct sockaddr_in cli_addr;
 	unsigned short cli_data_port;
