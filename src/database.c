@@ -128,6 +128,8 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 			return -1;
 		    }
 
+		    xmlFree(xml_name);
+		    xmlFree(xml_password);
 		    return 1;
 		} else {
 		    fprintf(stderr, "Erreur: pas de mot de passe après login.\n");
