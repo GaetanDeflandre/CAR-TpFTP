@@ -15,10 +15,18 @@
 /** Longueur maximum pour un mot de passe */
 #define PASSWORD_MAXLEN 126
 
-
-int init_database(const char* filename);
-xmlNodePtr get_root();
-int login(const char* name, char** password, char** path);
-int walker(const xmlNodePtr node, const char* name, char** password, char** path);
+/**
+ * Recherche l'utilisateur \a name dans la base de donnée.
+ *
+ * @param[in] name Le nom de l'utilisateur à rechercher.
+ * @param[out] password Est copié le mot de passe si l'utilisateur 
+ * recherché s'il existe.
+ * @param[out] path Est copié le nom du répertoire de fichiers de 
+ * l'utilisateur recherché, s'il existe.
+ * @return 1 si l'utilisateur est trouvé.<br\>
+ *         0 si l'utilisateur n'est pas trouvé.<br\>
+ *         -1 en cas d'erreur.<br\>
+ */
+int get_user_info(const char* name, char** password, char** path);
 
 #endif /* DATABASE_H_ */

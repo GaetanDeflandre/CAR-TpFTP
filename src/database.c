@@ -3,9 +3,27 @@
 
 static xmlNodePtr _root;
 
-int parcoursDOM(const xmlNodePtr node){
-    return 0;
-}
+/* PRIVATE */
+
+/*
+ * Initialise la base de données, change le XML.
+ * Retourne 0 si bon fonctionnement, -1 sinon.
+ */
+int init_database(const char* filename);
+
+/* 
+ * Retourne la racine du DOM xlm de la base de donnée.
+ */
+xmlNodePtr get_root();
+
+/*
+ * Parcours récursive des noeuds du DOM, tant que l'utilisateur 
+ * n'est pas retrouvé.
+ */
+int walker(const xmlNodePtr node, const char* name, char** password, char** path);
+
+int walker(const xmlNodePtr node, const char* name, char** password, char** path);
+
 
 int init_database(const char* filename){
 
@@ -39,7 +57,7 @@ xmlNodePtr get_root(){
     return _root;
 }
 
-int login(const char* name, char** password, char** path){
+int get_user_info(const char* name, char** password, char** path){
     
     xmlNodePtr root = get_root();
 
@@ -90,7 +108,7 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 		    printf("%s: %s\n", n->name, xml_password);
 		    xmlFree(xml_name);
 		    xmlFree(xml_password);
-		    return 0;
+		    return 1;
 		} else {
 		    fprintf(stderr, "Erreur: pas de mot de passe après login.\n");
 		    xmlFree(xml_name);
@@ -101,12 +119,10 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 
 
 	if ((n->type == XML_ELEMENT_NODE) && (n->children != NULL)) {
-	    if(walker(n->children, name, password, path) == 0){
-		return 0;
-	    }
+	    return walker(n->children, name, password, path);
         } 
     }
     
-    return -1;
+    return 0;
 }
 

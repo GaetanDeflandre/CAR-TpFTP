@@ -1,5 +1,5 @@
-#ifndef CMD_HANDLER_H_
-#define CMD_HANDLER_H_
+#ifndef CLIENT_HANDLER_H_
+#define CLIENT_HANDLER_H_
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -22,4 +22,4 @@ struct s_client
 
 void handle_client(struct sockaddr_in client_addr, int socket);
 
-#endif /* CMD_HANDLER_H_ */
+#endif /* CLIENT_HANDLER_H_ */
