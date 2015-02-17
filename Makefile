@@ -31,10 +31,9 @@ BINDIR	= bin
 ETCDIR	= etc
 DOCDIR	= doc  
 
-SOURCES	 = servFTP.c cmdHandler.c command.c database.c
+SOURCES	 = servFTP.c clientHandler.c command.c database.c cmdUser.c
 TESTS 	 = testServFTP.c testDatabase.c
-BINARIES = servFTP 
-BINARIES += testServFTP testDatabase
+BINARIES = servFTP testServFTP testDatabase 
 HEADERS  = ${SOURCE:.c=.h}
 OBJECTS  = ${SOURCE:.c=.o}
 #OBJECTS += ${TESTS:.c=.o}
@@ -57,7 +56,7 @@ all: $(BINPATHS) $(OBJPATHS) $(RESSOURCES)
 ###------------------------------
 ### Make binaries
 ###------------------------------------------------------------
-bin/servFTP: obj/servFTP.o | $(BINDIR)
+bin/servFTP: obj/servFTP.o obj/clientHandler.o obj/command.o obj/cmdUser.o | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 bin/testServFTP: obj/testServFTP.o  | $(BINDIR)
@@ -79,8 +78,9 @@ bin:
 ### Compile source
 ###------------------------------------------------------------
 obj/servFTP.o:		src/servFTP.c include/servFTP.h
-obj/cmdHandler.o:	src/cmdHandler.c include/cmdHandler.h
-obj/command.o:		src/commad.c include/command.h
+obj/clientHandler.o:	src/clientHandler.c include/clientHandler.h
+obj/command.o:		src/command.c include/command.h
+obj/cmdUser.o:		src/cmdUser.c include/cmdUser.h
 obj/database.o:		src/database.c include/database.h
 
 obj/testServFTP.o:	test/testServFTP.c src/servFTP.c include/servFTP.h

@@ -3,11 +3,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
 
 #include "servFTP.h"
+#include <clientHandler.h>
 
 void usage(char* name){
     printf("Serveur FTP.\n\n");
@@ -16,8 +18,10 @@ void usage(char* name){
 }
 
 int main(int argc, char* argv[]){
-    int listenfd, clientfd; 
+    int listenfd, clientfd, status; 
     struct sockaddr_in serv_addr;
+    struct sockaddr_in cli_addr;
+    socklen_t sock_len;
     
     char buf[BUF_SIZE];  
 
@@ -34,7 +38,7 @@ int main(int argc, char* argv[]){
     }
 
     memset(&serv_addr, 0, sizeof(struct sockaddr));
-    memset(buf, 0, 256);
+    memset(buf, 0, BUF_SIZE);
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -47,26 +51,23 @@ int main(int argc, char* argv[]){
 	
     listen(listenfd, 10);
 	
-    clientfd = accept(listenfd, NULL, NULL);
-    snprintf(buf, sizeof(buf), "\n\n");
+	sock_len = sizeof(cli_addr);
+	
 
-    if(write(clientfd, buf, strlen(buf)) == -1){
-	perror("Erreur write: ");
-	exit(EXIT_FAILURE);
-    }
-
-    if(read(clientfd, buf, BUF_SIZE) == -1){
-	perror("Erreur read: ");
-	exit(EXIT_FAILURE);
-    }
+	clientfd = accept(listenfd, (struct sockaddr *) &cli_addr, &sock_len);
+	
+	switch (fork())
+	{
+		case 0:
+			handle_client(cli_addr, clientfd);
+			close(clientfd);
+			
+			exit(EXIT_SUCCESS);
+			break;
+	}
+	
+	wait(&status);
     
-    printf("%s\n", buf);
-    snprintf(buf, sizeof(buf), "\n");
-    
-    if(write(clientfd, buf, strlen(buf)) == -1){
-	perror("Erreur write: ");
-	exit(EXIT_FAILURE);
-    }
 
     //read(clientfd, buf, BUF_SIZE);
     //~ printf("%s\n", buf);
