@@ -12,8 +12,12 @@
 
 /** Chemin vers la base de données */
 #define DATABASE_FILE "etc/database.xml"
+/** Répertoire des fichiers des utilisateurs */
+#define FILES_DIR "files/"
 /** Longueur maximum pour un mot de passe */
 #define PASSWORD_MAXLEN 126
+/** Longueur maximum pour le nom de répertoire d'un utilisateur */
+#define PATHNAME_MAXLEN 126
 
 /**
  * Recherche l'utilisateur \a name dans la base de donnée.

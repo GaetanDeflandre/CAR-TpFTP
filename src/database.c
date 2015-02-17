@@ -22,8 +22,6 @@ xmlNodePtr get_root();
  */
 int walker(const xmlNodePtr node, const char* name, char** password, char** path);
 
-int walker(const xmlNodePtr node, const char* name, char** password, char** path);
-
 
 int init_database(const char* filename){
 
@@ -74,17 +72,20 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
     xmlNodePtr n;
     xmlChar* xml_name = NULL;
     xmlChar* xml_password = NULL;
+    int status;
 
     for(n = node; n!=NULL; n=n->next){
 
 	if(n->type == XML_ELEMENT_NODE && strcmp((char*)(n->name), "login") == 0){
 	    xml_name = xmlNodeGetContent(n);
 	    if(strcmp((char*)xml_name, name) == 0){
-		printf("Utilisateur existant.\n");
-		printf("%s: %s\n", n->name, xml_name);
 
-		n=n->next;
-		n=n->next;
+		if(n->next==NULL || n->next->next==NULL){
+		    fprintf(stderr, "Erreur: fichier XML mal formaté, noeud manquant.\n");
+		    return -1;
+		}
+		n = n->next->next;
+		
 		if(n == NULL && n->type == XML_ELEMENT_NODE){
 		    fprintf(stderr, "Erreur: fichier XML mal formaté.\n");
 		    xmlFree(xml_name);
@@ -105,9 +106,28 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 			return -1;
 		    }
 
-		    printf("%s: %s\n", n->name, xml_password);
 		    xmlFree(xml_name);
 		    xmlFree(xml_password);
+		    
+		    *path = malloc(sizeof(char) * PATHNAME_MAXLEN);
+		    if(*path != NULL){
+			strncpy(*path, FILES_DIR, PATHNAME_MAXLEN);
+		    }
+		    if(*path == NULL){
+			fprintf(stderr, "Erreur: lors de la copy du répertoire utilisateur.\n");
+			xmlFree(xml_name);
+			xmlFree(xml_password);
+			return -1;
+		    }
+		    
+		    strncat(*path, name, PATHNAME_MAXLEN - strlen(name) -1);
+		    if(*path == NULL){
+			fprintf(stderr, "Erreur strncat: echec écriture sur nom de répertorie.\n");
+			xmlFree(xml_name);
+			xmlFree(xml_password);
+			return -1;
+		    }
+
 		    return 1;
 		} else {
 		    fprintf(stderr, "Erreur: pas de mot de passe après login.\n");
@@ -119,7 +139,11 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 
 
 	if ((n->type == XML_ELEMENT_NODE) && (n->children != NULL)) {
-	    return walker(n->children, name, password, path);
+	    status = walker(n->children, name, password, path);
+
+	    if(status != 0){
+		return status;
+	    }
         } 
     }
     
