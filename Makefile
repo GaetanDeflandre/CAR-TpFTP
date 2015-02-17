@@ -8,8 +8,9 @@
 ###------------------------------------------------------------
 CC	= gcc
 CFLAGS	= -Wall -Werror
-CFLAGS  += -ansi -pedantic -O3
-CFLAGS	+= -pipe -std=c11
+CFLAGS	+= -ansi -pedantic
+CFLAGS  += -D_XOPEN_SOURCE=500
+CFLAGS	+= -O3 -pipe -std=gnu11
 CFLAGS	+= -g `xml2-config --cflags`
 
 LDFLAGS = `xml2-config --libs`

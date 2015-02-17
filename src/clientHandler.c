@@ -26,32 +26,32 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
-    if(write(client.cli_sock, buf, strlen(buf)) == -1)
-    {
+	if(write(client.cli_sock, buf, strlen(buf)) == -1)
+	    {
 		perror("Erreur write: ");
 		exit(EXIT_FAILURE);
-    }
+	    }
     
-    req_size = read_client_request(client.cli_sock, &request);
-    printf("Size of request: %d\nRequest: %s\n", req_size, request);
+	req_size = read_client_request(client.cli_sock, &request);
+	printf("Size of request: %d\nRequest: %s\n", req_size, request);
     
-    cmd = init_cmd(request, &client);
-    if (cmd != NULL)
+	cmd = init_cmd(request, &client);
+	if (cmd != NULL)
 		exec_cmd(cmd);
 	else
 		fprintf(stderr, "Erreur cmd\n");
     
-    snprintf(buf, BUF_SIZE, "230\r\n");
+	snprintf(buf, BUF_SIZE, "230\r\n");
     
-    if(write(client.cli_sock, buf, strlen(buf)) == -1)
-    {
-	perror("Erreur write: ");
-	exit(EXIT_FAILURE);
-    }
+	if(write(client.cli_sock, buf, strlen(buf)) == -1)
+	    {
+		perror("Erreur write: ");
+		exit(EXIT_FAILURE);
+	    }
     
-    close(client.cli_sock);
+	close(client.cli_sock);
     
-    return;
+	return;
 }
 
 ssize_t read_client_request(int sockfd, char **request)
