@@ -7,7 +7,7 @@
 ### Compile options
 ###------------------------------------------------------------
 CC	= gcc
-CFLAGS	= -Wall -Werror -Wextra
+CFLAGS	= -Wall -Werror
 CFLAGS  += -ansi -pedantic -O3
 CFLAGS	+= -pipe -std=c11
 CFLAGS	+= -g `xml2-config --cflags`
@@ -32,8 +32,9 @@ ETCDIR	= etc
 DOCDIR	= doc  
 
 SOURCES	 = servFTP.c cmdHandler.c command.c database.c
-TESTS 	 = testServFTP.c
-BINARIES = servFTP testServFTP
+TESTS 	 = testServFTP.c testDatabase.c
+BINARIES = servFTP 
+BINARIES += testServFTP testDatabase
 HEADERS  = ${SOURCE:.c=.h}
 OBJECTS  = ${SOURCE:.c=.o}
 #OBJECTS += ${TESTS:.c=.o}
@@ -59,8 +60,11 @@ all: $(BINPATHS) $(OBJPATHS) $(RESSOURCES)
 bin/servFTP: obj/servFTP.o | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-bin/testServFTP: \
-	obj/testServFTP.o obj/database.o  | $(BINDIR)
+bin/testServFTP: obj/testServFTP.o  | $(BINDIR)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+bin/testDatabase: \
+	obj/testDatabase.o obj/database.o | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 
@@ -76,10 +80,11 @@ bin:
 ###------------------------------------------------------------
 obj/servFTP.o:		src/servFTP.c include/servFTP.h
 obj/cmdHandler.o:	src/cmdHandler.c include/cmdHandler.h
-obj/command.o:		src/commad.c include/command.c
+obj/command.o:		src/commad.c include/command.h
 obj/database.o:		src/database.c include/database.h
 
-obj/testServFTP.o:	$(SRCPATHS) $(INCPATHS) $(TESTPATHS)
+obj/testServFTP.o:	test/testServFTP.c src/servFTP.c include/servFTP.h
+obj/testDatabase.o:	test/testDatabase.c src/database.c include/database.h
 
 
 obj/%.o: src/%.c | $(OBJDIR)

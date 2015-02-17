@@ -11,5 +11,10 @@
     <login>toto</login>
     <password>mdp</password>
   </user>
+
+  <user>
+    <login>test</login>
+    <password>testmdp</password>
+  </user>
   
 </database>
