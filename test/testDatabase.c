@@ -1,38 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "database.h"
 
 
-int test_all_database();
-int test_get_use_info();
+void test_all_database();
+void test_get_use_info();
 
 
-int test_all_database(){
-
-    if(test_get_use_info() == -1){
-	return -1;
-    }
-
-    return 0;
+void test_all_database(){
+    test_get_use_info();
 }
 
-int test_get_use_info(){
+void test_get_use_info(){
+
+    /* wordking case*/
 
     char* mdp;
     char* path;
     int status;
     
-    status = get_user_info("toto", &mdp, &path);
+    status = get_user_info("test", &mdp, &path);
 
-    printf("Status: %d\n", status); 
-    printf("%s\n", mdp);
-    printf("%s\n", path);
-    
-    /*assert();*/
+    assert(status == 1);
+    assert(strcmp(mdp, "testmdp") == 0);
+    assert(strcmp(path, "files/test") == 0);
 
-    return 0;
+    printf("OK: get_user_info");
 }
 
 
@@ -43,9 +39,9 @@ int main(int argc, char *argv[]){
 	exit(EXIT_FAILURE);
     }
 
-    if(test_all_database() == -1){
-	exit(EXIT_FAILURE);
-    }
+    test_all_database();
+
+    printf("\nOK: all database fonctions\n");
 
     exit(EXIT_SUCCESS);
 }
