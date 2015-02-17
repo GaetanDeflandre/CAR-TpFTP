@@ -74,13 +74,14 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 		}
 		
 		if(strcmp((char*)n->name, "password") == 0){
-		xml_password = xmlNodeGetContent(n);
-		printf("%s: %s\n", n->name, xml_password);
-		xmlFree(xml_name);
-		xmlFree(xml_password);
-		return 0;
+		    xml_password = xmlNodeGetContent(n);
+		    printf("%s: %s\n", n->name, xml_password);
+		    xmlFree(xml_name);
+		    xmlFree(xml_password);
+		    return 0;
 		} else {
-		    fprintf(stderr, "Erreur: ");
+		    fprintf(stderr, "Erreur: pas de mot de passe après login.\n");
+		    xmlFree(xml_name);
 		    return -1;
 		}
 	    }
