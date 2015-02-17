@@ -16,17 +16,6 @@
 #define PASSWORD_MAXLEN 126
 
 
-/**
- * @struct user_s 
- * @brief La paire login et mot de passe de l'utilisateur. 
- */
-struct user_s{
-    /** Login utilisateur. */
-    char* login;
-    /** Mot de passe utilisateur. */
-    char* password;
-};
-
 int init_database(const char* filename);
 xmlNodePtr get_root();
 int login(const char* name, char** password, char** path);
