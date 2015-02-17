@@ -3,11 +3,6 @@
 <database>
 
   <user>
-    <login>admin</login>
-    <password>admin</password>
-  </user>
-
-  <user>
     <login>test</login>
     <password>testmdp</password>
   </user>
