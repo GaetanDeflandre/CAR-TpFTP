@@ -75,6 +75,18 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 		
 		if(strcmp((char*)n->name, "password") == 0){
 		    xml_password = xmlNodeGetContent(n);
+
+		    *password = malloc(sizeof(char) * PASSWORD_MAXLEN);
+		    if(*password != NULL){
+			strncpy(*password, (char*)xml_password, PASSWORD_MAXLEN);
+		    }
+		    if(*password == NULL){
+			fprintf(stderr, "Erreur: lors de la copy du mot de passe.\n");
+			xmlFree(xml_name);
+			xmlFree(xml_password);
+			return -1;
+		    }
+
 		    printf("%s: %s\n", n->name, xml_password);
 		    xmlFree(xml_name);
 		    xmlFree(xml_password);

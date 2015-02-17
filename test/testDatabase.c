@@ -5,7 +5,10 @@
 
 
 void test_all_database(){
-    login("toto", NULL, NULL);
+
+    char* mdp;
+    login("toto", &mdp, NULL);
+    printf("%s\n", mdp);
 }
 
 

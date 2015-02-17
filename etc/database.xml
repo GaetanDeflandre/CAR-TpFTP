@@ -8,13 +8,13 @@
   </user>
 
   <user>
-    <login>toto</login>
-    <password>mdp</password>
+    <login>test</login>
+    <password>testmdp</password>
   </user>
 
   <user>
-    <login>test</login>
-    <password>testmdp</password>
+    <login>toto</login>
+    <password>mdp</password>
   </user>
   
 </database>

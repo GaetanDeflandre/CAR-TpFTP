@@ -10,10 +10,11 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 
-/**
- * Chemin vers la base de données
- */
+/** Chemin vers la base de données */
 #define DATABASE_FILE "etc/database.xml"
+/** Longueur maximum pour un mot de passe */
+#define PASSWORD_MAXLEN 126
+
 
 /**
  * @struct user_s 
