@@ -1,4 +1,4 @@
-#idndef COMMUNICATION_H
+#ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
 #include <sys/types.h>
