@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <servFTP.h>
+#include "servFTP.h"
 #include "command.h"
 #include "communication.h"
 #include "database.h"
@@ -348,46 +348,96 @@ void process_list(struct s_cmd * cmd)
 {
     DIR *pDir;
     struct dirent *pDirent;
-    char buf[BUF_SIZE];
-    int status = -1;
+    char buf[MESSAGE_SIZE];
+    char path[PATHNAME_MAXLEN];
+    int status = 0;
+    struct s_client * client;
+    struct s_data_connection * c_data_connect;
     
-    pDir = opendir("files/toto");/* Apres ouvrir avec cmd->cmd_client->cli_current_path*/
-    if (pDir == NULL) {
-        perror("Erreur opendir: ");
-	status = -2;
-    }
-    
-    while ((pDirent = readdir(pDir)) != NULL) {
-        printf ("[%s]\n", pDirent->d_name);
-    }
-        
-    
-    /* Data connection already open; transfer starting. */
-    snprintf(buf, BUF_SIZE, "125\r\n");
+    client = cmd->cmd_client;
 
-    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	perror("Erreur write: ");
-	return;
+    if(client == NULL){
+	fprintf(stderr, "Erreur: client faut null.\n");
+	status = -1;
     }
 
-    /*if(cmd->cmd_client->cli_data_transfer_t == NORMAL_DT){*/
-
-	/* envoyer le résultat de la liste ici */
-	/*if ((bind(listenfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) != 0){
-	    perror("Erreur bind: ");
-	    return;
+    /* ARGUMENT */
+    if(strcpy(path, client->cli_current_path) == NULL){
+	perror("Erreur strcpy: ");
+	status = -1;
+    }
+    if(cmd->cmd_args_field != NULL){
+	if(strcat(path, cmd->cmd_args_field) == NULL){
+	    perror("Erreur strcat: ");
+	    status = -1;
 	}
+    }
 
-	} else {*/
-	/* Command not implemented for that parameter. */
-	/*snprintf(buf, BUF_SIZE, "504 Command not implemented for that parameter.\r\n");
+    printf("path: %s\n", path);
+
+    /* OPEN DIR */
+    if(status>=0){
+	pDir = opendir(path);
+	if (pDir == NULL) {
+	    perror("Erreur opendir: ");
+	    status = -2;
+	}
+    }
+
+    /* GET FOLDER CHILDREN  */
+    if(status>=0){
+	if((pDirent = readdir(pDir)) != NULL){
+
+	    if(strncpy(buf, pDirent->d_name, MESSAGE_SIZE-1) == NULL){
+		perror("Erreur strncpy: ");
+		status = -1;
+	    }
 	
+	    while ((pDirent = readdir(pDir)) != NULL) {
+		if(strcat(buf, pDirent->d_name)== NULL){
+		    perror("Erreur strcat: ");
+		    status = -1;
+		    break;
+		}
+	    }
+
+	    strcat(buf, "\r\n");
+
+	} else {
+	    buf[0] = '\0';
+	}
+    }
+
+    if(status>=0){
+
+	/* SEND LIST*/
+	/* File status okay; about to open data connection. */
+	snprintf(buf, BUF_SIZE, "125 File status okay; about to open data connection.\r\n");
+
 	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
 	    perror("Erreur write: ");
-	    return;
+	    status = -1;
 	}
 
-    }*/
+	c_data_connect = client->cli_data_connection;
+	if(c_data_connect == NULL){
+	    fprintf(stderr, "Erreur: champ cli_data_connection null.\n");
+	    status = -1;
+	}
+	if(c_data_connect->dc_transfer_t == DT_ACTIVE){
+
+
+	} else {
+	    /* Command not implemented for that parameter. */
+	    snprintf(buf, BUF_SIZE, "504 Command not implemented for that parameter.\r\n");
+	
+	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+		perror("Erreur write: ");
+		status = -1;
+	    }
+
+	}
+    }
     
     if(status == 0){
 	/* Closing data connection. */
