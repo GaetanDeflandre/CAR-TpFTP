@@ -300,6 +300,7 @@ void process_pass(struct s_cmd * cmd)
 		}
 		else
 		{
+			cmd->cmd_client->cli_username = NULL;
 			snprintf(buf, BUF_SIZE, "530 Not logged in. Bad password.\r\n");
 			write_client(cmd->cmd_client->cli_sock, buf);
 		}

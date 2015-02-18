@@ -33,6 +33,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
 	write_client(client.cli_sock, buf);
     
+    /* Boucle de traitement de requetes. Une requete par tour. */
     while(1)
     {
 		/* Lecture requete */
@@ -57,14 +58,12 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			}
 			else if (cmd->cmd_t == CMD_PASS)
 			{
-				if (waitingForPassword)
-				{
-					waitingForPassword = 0;
-				}
-				else
+				if (!waitingForPassword)
 				{
 					snprintf(buf, BUF_SIZE, "503 Bad sequence of commands.\r\n");
 					write_client(client.cli_sock, buf);
+					
+					continue;
 				}
 			} else if (cmd->cmd_t == CMD_USER) // (Re)commencement du login.
 			{
@@ -72,7 +71,14 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 				client.cli_logged_in = 0;
 			}
 			
+			/* Execution de la requete */
 			exec_cmd(cmd);
+			
+			if (waitingForPassword)
+			{
+				client.cli_username = NULL;
+				waitingForPassword = 0;
+			}
 			
 			/* Commande USER avec succes. */
 			if (cmd->cmd_t == CMD_USER && client.cli_username != NULL)
@@ -84,11 +90,16 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 		    fprintf(stderr, "Erreur cmd: request=%s\n", request);
 		    snprintf(buf, BUF_SIZE, "500 Syntax error, command unrecognized.\r\n");
 			write_client(client.cli_sock, buf);
-		    
-			continue;
+			
+			if (waitingForPassword)
+			{
+				client.cli_username = NULL;
+				waitingForPassword = 0;
+			}
 		}
 		
-		if (cmd->cmd_t == CMD_QUIT)
+		/* Connexion terminée. */
+		if (cmd != NULL && cmd->cmd_t == CMD_QUIT)
 			return;
 	}
 }
