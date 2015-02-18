@@ -41,6 +41,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 		printf("Size of request: %d\nRequest: %s\n", req_size, request);
 		
 		/* Traitement de la requete */
+		destroy_cmd(cmd);
 		cmd = init_cmd(request, &client);
 		if (cmd != NULL)
 		{
@@ -67,6 +68,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 				}
 			} else if (cmd->cmd_t == CMD_USER) // (Re)commencement du login.
 			{
+				free(client.cli_username);
 				client.cli_username = NULL;
 				client.cli_logged_in = 0;
 			}
@@ -76,6 +78,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
+				free(client.cli_username);
 				client.cli_username = NULL;
 				waitingForPassword = 0;
 			}
@@ -93,6 +96,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
+				free(client.cli_username);
 				client.cli_username = NULL;
 				waitingForPassword = 0;
 			}
@@ -181,6 +185,7 @@ ssize_t read_client_request(int sockfd, char **request)
 
 void close_connection(struct s_client * client)
 {
+	free(client->cli_username);
 	close(client->cli_sock);
 	
 	return;

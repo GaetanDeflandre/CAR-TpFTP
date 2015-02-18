@@ -54,4 +54,10 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client);
  */
 void exec_cmd(struct s_cmd * cmd);
 
+/**
+ * Détruit une commande en libérant la mémoire.
+ * @param[in] cmd la commande à détruire
+ */
+void destroy_cmd(struct s_cmd * cmd);
+
 #endif /* COMMAND_H_ */

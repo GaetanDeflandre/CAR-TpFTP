@@ -78,7 +78,7 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 
 	if(n->type == XML_ELEMENT_NODE && strcmp((char*)(n->name), "login") == 0){
 	    xml_name = xmlNodeGetContent(n);
-	    printf("xml_name: %s\n", (char *) xml_name);
+	    
 	    if(strcmp((char*)xml_name, name) == 0){
 
 		if(n->next==NULL || n->next->next==NULL){

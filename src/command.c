@@ -260,7 +260,8 @@ void process_user(struct s_cmd * cmd)
 	
 	if (get_user_info(cmd->cmd_args_field, &password, &path))
 	{
-		cmd->cmd_client->cli_username = cmd->cmd_args_field;
+		cmd->cmd_client->cli_username = (char *) malloc((strlen(cmd->cmd_args_field) + 1) * sizeof(char));
+		strcpy(cmd->cmd_client->cli_username, cmd->cmd_args_field);
 		snprintf(buf, BUF_SIZE, "331 User name okay, need password.\r\n");
 		write_client(cmd->cmd_client->cli_sock, buf);
 	}
@@ -300,6 +301,7 @@ void process_pass(struct s_cmd * cmd)
 		}
 		else
 		{
+			free(cmd->cmd_client->cli_username);
 			cmd->cmd_client->cli_username = NULL;
 			snprintf(buf, BUF_SIZE, "530 Not logged in. Bad password.\r\n");
 			write_client(cmd->cmd_client->cli_sock, buf);
@@ -415,4 +417,11 @@ void process_list(struct s_cmd * cmd)
     return;
 }
 
-
+void destroy_cmd(struct s_cmd * cmd)
+{
+	if (cmd != NULL)
+	{
+		free(cmd->cmd_args_field);
+		free(cmd);
+	}
+}
