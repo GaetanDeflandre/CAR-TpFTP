@@ -77,8 +77,6 @@ int open_data_connection(struct s_data_connection * dc)
 		return -1;
 	}
 	
-	printf("###--- Conn OK sur %d %d\n", dc->dc_addr.sin_port, ntohs(dc->dc_addr.sin_port));
-	
 	return 1;
 }
 
@@ -197,7 +195,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 			return -3;
 		}
 		
-		if (write(dc->dc_socket, buf, BUF_SIZE + 1) < 0)
+		if (write(dc->dc_socket, buf, BUF_SIZE+1) < 0)
 		{
 			perror("Erreur send_file (write): ");
 			return -4;

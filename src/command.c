@@ -172,8 +172,6 @@ struct s_cmd * new_pass(char * args)
 	struct s_cmd * cmd;
 	char * request_args = NULL;
 	
-	printf("new_pass\n");
-	
 	cmd = malloc(sizeof(struct s_cmd));
 	if (cmd == NULL)
 	{
@@ -665,12 +663,118 @@ void process_list(struct s_cmd * cmd)
 
 void process_retr(struct s_cmd * cmd)
 {
+	struct s_data_connection * dc;
+	int sock_user_PI;
+	char path[PATHNAME_MAXLEN];
+	ssize_t ret;
 	
+	/* ARGUMENT */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
+	perror("Erreur strcpy: ");
+    }
+    if(cmd->cmd_args_field != NULL){
+	if(strcat(path, "/") == NULL){
+	    perror("Erreur strcat: ");
+	}
+	if(strcat(path, cmd->cmd_args_field) == NULL){
+	    perror("Erreur strcat: ");
+	}
+    }
+	
+	sock_user_PI = cmd->cmd_client->cli_sock;
+	dc = cmd->cmd_client->cli_data_connection;
+	if (!is_data_connection_opened(dc))
+	{
+		write_socket(sock_user_PI, "150 About to open data connection.\r\n");
+		if (open_data_connection(dc) < 0)
+		{
+			write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
+			fprintf(stderr, "Erreur process_retr (open_data).\n");
+			return;
+		}
+	}
+	else
+	{
+		write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");		
+	}
+	
+	
+	ret = send_file(path, dc);
+	
+	if (ret == -2)
+	{
+		write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
+		return;
+	}
+	else if (ret < 0)
+	{
+		close_data_connection(dc);
+		write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
+		return;
+	}
+	
+	write_socket(sock_user_PI, "226 Closing data connection.\r\n");
+	close_data_connection(dc);
+	
+	return;
 }
 
 void process_stor(struct s_cmd * cmd)
 {
+	struct s_data_connection * dc;
+	int sock_user_PI;
+	char path[PATHNAME_MAXLEN];
+	ssize_t ret;
 	
+	/* ARGUMENT */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
+	perror("Erreur strcpy: ");
+    }
+    if(cmd->cmd_args_field != NULL){
+	if(strcat(path, "/") == NULL){
+	    perror("Erreur strcat: ");
+	}
+	if(strcat(path, cmd->cmd_args_field) == NULL){
+	    perror("Erreur strcat: ");
+	}
+    }
+	
+	sock_user_PI = cmd->cmd_client->cli_sock;
+	dc = cmd->cmd_client->cli_data_connection;
+	if (!is_data_connection_opened(dc))
+	{
+		write_socket(sock_user_PI, "150 About to open data connection.\r\n");
+		if (open_data_connection(dc) < 0)
+		{
+			write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
+			fprintf(stderr, "Erreur process_retr (open_data).\n");
+			return;
+		}
+	}
+	else
+	{
+		write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");		
+	}
+	
+	
+	ret = read_file(path, dc);
+	
+	if (ret == -2)
+	{
+		write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
+		return;
+	}
+	else if (ret < 0)
+	{
+		close_data_connection(dc);
+		write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
+		return;
+	}
+	
+	write_socket(sock_user_PI, "226 Closing data connection.\r\n");
+	close_data_connection(dc);
+	
+	return;
 }
 
 void destroy_cmd(struct s_cmd * cmd)
