@@ -106,10 +106,21 @@ struct s_cmd * new_quit(char * args)
 	}
 	
 	cmd->cmd_t = CMD_QUIT;
-	cmd->cmd_h = process_quit;
+        cmd->cmd_h = process_quit;
 	cmd->cmd_args_field = NULL;
 	
 	return cmd;
+}
+
+struct s_cmd * new_list(char * args)
+{
+    /*struct s_cmd * cmd;
+      char * request_args;
+
+    printf("new_list\n");
+    cmd = malloc(sizeof(struct s_cmd));*/
+    
+
 }
 
 
