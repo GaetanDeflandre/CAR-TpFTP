@@ -128,14 +128,80 @@ ssize_t write_data(char * message, struct s_data_connection * dc)
 
 ssize_t read_file(char * pathname, struct s_data_connection * dc)
 {
-	//~ open(pathname, O_CREATE | O_WRONLY
+	char buf[BUF_SIZE + 1];
+	int fd;
+	ssize_t ret, nb_read_chars=0;
 	
-	fprintf(stderr, "NYI !\n");
-	return -1;
+	if (dc->dc_socket < 0)
+	{
+		fprintf(stderr, "Erreur read_file: Connexion données non-ouverte.\n");
+		return -1;
+	}
+	
+	fd = creat(pathname, S_IRWXU | S_IRWXG | S_IRWXO);
+	if (fd < 0)
+	{
+		perror("Erreur read_file (creat): ");
+		return -2;
+	}
+	
+	while ((ret = read(dc->dc_socket, buf, BUF_SIZE+1)) != 0)
+	{
+		if (ret < 0)
+		{
+			perror("Erreur read_file (read): ");
+			return -3;
+		}
+		
+		if (write(fd, buf, BUF_SIZE + 1) < 0)
+		{
+			perror("Erreur read_file (write): ");
+			return -4;
+		}
+		
+		nb_read_chars += ret;
+	}
+	
+	close(fd);
+	return nb_read_chars;
 }
 
 ssize_t send_file(char * pathname, struct s_data_connection * dc)
 {
-	fprintf(stderr, "NYI !\n");
-	return -1;
+	char buf[BUF_SIZE + 1];
+	int fd;
+	ssize_t ret, nb_read_chars=0;
+	
+	if (dc->dc_socket < 0)
+	{
+		fprintf(stderr, "Erreur send_file: Connexion données non-ouverte.\n");
+		return -1;
+	}
+	
+	fd = open(pathname, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("Erreur send_file (open): ");
+		return -2;
+	}
+	
+	while ((ret = read(fd, buf, BUF_SIZE+1)) != 0)
+	{
+		if (ret < 0)
+		{
+			perror("Erreur send_file (read): ");
+			return -3;
+		}
+		
+		if (write(dc->dc_socket, buf, BUF_SIZE + 1) < 0)
+		{
+			perror("Erreur send_file (write): ");
+			return -4;
+		}
+		
+		nb_read_chars += ret;
+	}
+	
+	close(fd);
+	return nb_read_chars;
 }
