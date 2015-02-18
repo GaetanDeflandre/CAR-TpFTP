@@ -182,6 +182,7 @@ ssize_t read_client_request(int sockfd, char **request)
 
 void close_connection(struct s_client * client)
 {
+	close_data_connection(client->cli_data_connection);
 	free(client->cli_username);
 	client->cli_username = NULL;
 	close(client->cli_sock);
