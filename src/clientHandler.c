@@ -1,6 +1,7 @@
 #include "clientHandler.h"
-#include <command.h>
-#include <servFTP.h>
+#include "command.h"
+#include "servFTP.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,7 +45,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			exec_cmd(cmd);
 		else
 		{
-			fprintf(stderr, "Erreur cmd\n");
+		    fprintf(stderr, "Erreur cmd: request=%s\n", request);
 			close_connection(&client);
 		}
 			
