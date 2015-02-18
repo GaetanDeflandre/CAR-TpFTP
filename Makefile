@@ -57,7 +57,7 @@ all: $(BINPATHS) $(OBJPATHS) $(RESSOURCES)
 ###------------------------------
 ### Make binaries
 ###------------------------------------------------------------
-bin/servFTP: obj/servFTP.o obj/clientHandler.o obj/command.o | $(BINDIR)
+bin/servFTP: obj/servFTP.o obj/clientHandler.o obj/command.o obj/database.o | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 bin/testServFTP: obj/testServFTP.o  | $(BINDIR)
@@ -80,7 +80,7 @@ bin:
 ###------------------------------------------------------------
 obj/servFTP.o:		src/servFTP.c include/servFTP.h
 obj/clientHandler.o:	src/clientHandler.c include/clientHandler.h
-obj/command.o:		src/command.c include/command.h
+obj/command.o:		src/command.c include/command.h 
 obj/database.o:		src/database.c include/database.h
 
 obj/testServFTP.o:	test/testServFTP.c src/servFTP.c include/servFTP.h

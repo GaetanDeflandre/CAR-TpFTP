@@ -20,6 +20,10 @@ enum data_transfer_type {NORMAL_DT, PASSIVE_DT};
  */
 struct s_client
 {
+	/** Nom de l'utilisateur, si connecté. */
+	char * cli_username;
+	/** Vaut 1 si le client est authentifié, 0 sinon. */
+	int cli_logged_in;
     /** Chemin courant du client */
     char cli_current_path[PATHNAME_MAXLEN];
     /** Socket du client */
@@ -37,6 +41,7 @@ struct s_client
  * appropriées jusqu'à la fin de la connexion. 
  */
 void handle_client(struct sockaddr_in client_addr, int socket);
+ssize_t write_client(int socket, char * buf);
 void close_connection(struct s_client * client);
 
 #endif /* CLIENT_HANDLER_H_ */

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 
+int needing_login_cmd(struct s_cmd * cmd);
 ssize_t read_client_request(int sockfd, char **request);
 //ssize_t write_reply(int sockfd, char *reply);
 
@@ -17,8 +18,11 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	char buf[BUF_SIZE+1]; // +1 pour '\0'
 	char * request = NULL;
 	int req_size;
+	int waitingForPassword = 0;
 	
 	// Création de la structure client.
+	client.cli_username = NULL;
+	client.cli_logged_in = 0;
 	memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 	client.cli_sock = socket;
 	client.cli_addr = client_addr;
@@ -27,11 +31,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
-	if(write(client.cli_sock, buf, strlen(buf)) == -1)
-	{
-		perror("Erreur write: ");
-		exit(EXIT_FAILURE);
-	}
+	write_client(client.cli_sock, buf);
     
     while(1)
     {
@@ -42,25 +42,82 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 		/* Traitement de la requete */
 		cmd = init_cmd(request, &client);
 		if (cmd != NULL)
+		{
+			printf("Type : %d\n", cmd->cmd_t);
+			/* Si la requete necessite un login */
+			if (needing_login_cmd(cmd))
+			{
+				if (!client.cli_logged_in)
+				{
+					snprintf(buf, BUF_SIZE, "530 Not logged in.\r\n");
+					write_client(client.cli_sock, buf);
+					
+					continue;
+				}
+			}
+			else if (cmd->cmd_t == CMD_PASS)
+			{
+				if (waitingForPassword)
+				{
+					waitingForPassword = 0;
+				}
+				else
+				{
+					snprintf(buf, BUF_SIZE, "503 Bad sequence of commands.\r\n");
+					write_client(client.cli_sock, buf);
+				}
+			} else if (cmd->cmd_t == CMD_USER) // (Re)commencement du login.
+			{
+				client.cli_username = NULL;
+				client.cli_logged_in = 0;
+			}
+			
 			exec_cmd(cmd);
+			
+			/* Commande USER avec succes. */
+			if (cmd->cmd_t == CMD_USER && client.cli_username != NULL)
+				waitingForPassword = 1;
+		}
 		else
 		{
+			/* Requete incorrecte. */
 		    fprintf(stderr, "Erreur cmd: request=%s\n", request);
-			close_connection(&client);
+		    snprintf(buf, BUF_SIZE, "500 Syntax error, command unrecognized.\r\n");
+			write_client(client.cli_sock, buf);
+		    
+			continue;
 		}
-			
+		
 		if (cmd->cmd_t == CMD_QUIT)
 			return;
-		
-		/* TODO Reponse au client */
-		snprintf(buf, BUF_SIZE, "230\r\n");
-		
-		if(write(client.cli_sock, buf, strlen(buf)) == -1)
-		{
-			perror("Erreur write: ");
-			exit(EXIT_FAILURE);
-		}
 	}
+}
+
+int needing_login_cmd(struct s_cmd * cmd)
+{
+	if (cmd->cmd_t == CMD_CWD || cmd->cmd_t == CMD_CDUP
+		|| cmd->cmd_t == CMD_LIST || cmd->cmd_t == CMD_MKD
+		|| cmd->cmd_t == CMD_RMD || cmd->cmd_t == CMD_RETR
+		|| cmd->cmd_t == CMD_STOR)
+	{
+		return 1;
+	}
+	
+	return 0;
+}
+
+ssize_t write_client(int socket, char * buf)
+{
+	ssize_t nb_bytes_written;
+	
+	nb_bytes_written = write(socket, buf, strlen(buf));
+	if(nb_bytes_written == -1)
+	{
+		perror("Erreur write: ");
+		exit(EXIT_FAILURE);
+	}
+	
+	return nb_bytes_written;
 }
 
 ssize_t read_client_request(int sockfd, char **request)

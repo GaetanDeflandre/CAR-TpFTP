@@ -9,7 +9,7 @@
 /** Port sur lequel le serveur écoute. */
 #define SERV_PORT 2121
 /** Taille des messages qui servent à établir la connection. */
-#define BUF_SIZE 256
+#define BUF_SIZE 512
 
 
 /**

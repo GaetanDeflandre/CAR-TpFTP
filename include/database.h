@@ -23,7 +23,7 @@
  * Recherche l'utilisateur \a name dans la base de donnée.
  *
  * @param[in] name Le nom de l'utilisateur à rechercher.
- * @param[out] password Est copié le mot de passe si l'utilisateur 
+ * @param[out] password Est copié le mot de passe de l'utilisateur 
  * recherché s'il existe.
  * @param[out] path Est copié le nom du répertoire de fichiers de 
  * l'utilisateur recherché, s'il existe.

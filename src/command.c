@@ -9,23 +9,26 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "servFTP.h"
+#include <servFTP.h>
 #include "command.h"
-#include "database.h"
+#include <database.h>
 
 #define CODE_USER "USER"
+#define CODE_PASS "PASS"
 #define CODE_QUIT "QUIT"
 #define CODE_SYST "SYST"
 #define CODE_LIST "LIST"
 
 /* CREATION DE COMMANDES */
 struct s_cmd * new_user(char * args);
+struct s_cmd * new_pass(char * args);
 struct s_cmd * new_quit(char * args);
 struct s_cmd * new_syst(char * args);
 struct s_cmd * new_list(char * args);
 
 /* HANDLERS DES COMMANDES */
 void process_user(struct s_cmd * cmd);
+void process_pass(struct s_cmd * cmd);
 void process_quit(struct s_cmd * cmd);
 void process_syst(struct s_cmd * cmd);
 void process_list(struct s_cmd * cmd);
@@ -36,26 +39,38 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 {
 	struct s_cmd * cmd;
 	char *request_code, *request_args;
-	char * cr_char;
+	char * crlf;
 	char request_line[MAX_REQUEST_LENGTH];
+	
+	/* Si la requete est trop longue. */
+	if (strlen(client_request) > MAX_REQUEST_LENGTH -1)
+	{
+		fprintf(stderr, "Erreur init_cmd: La requete est trop longue.\n");
+		return NULL;
+	}
 	
 	strncpy(request_line, client_request, MAX_REQUEST_LENGTH);
 	
-	request_code = strtok(request_line, " ");
-	request_args = strtok(NULL, "");
-	
-	/* Elimination de CRLF, si il est trouve a la fin du code de 
-	requete, pour la reconnaissance de code */
-	cr_char = strrchr(request_code, '\r');
-	if (cr_char != NULL)
+	/* Elimination du CRLF en fin de requete. */
+	crlf = strstr(request_line, "\r\n");
+	if (crlf != NULL)
+		*crlf = '\0';
+	else
 	{
-		if (*(cr_char+1) == '\n')
-			*cr_char = '\0';
+		fprintf(stderr, "Erreur init_cmd: La requete ne termine pas par <CRLF>.\n");
+		return NULL;
 	}
+	
+	request_code = strtok(request_line, " \f\n\r\t\v");
+	request_args = strtok(NULL, ""); // Le reste de la chaine.
 	
 	if (strncasecmp(request_code, CODE_USER, strlen(request_code)) == 0)
 	{
 		cmd = new_user(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_PASS, strlen(request_code)) == 0)
+	{
+		cmd = new_pass(request_args);
 	}
 	else if (strncasecmp(request_code, CODE_QUIT, strlen(request_code)) == 0)
 	{
@@ -120,12 +135,39 @@ struct s_cmd * new_user(char * args)
 	
 	if (args != NULL)
 	{
-		request_args = malloc(strlen(args) * sizeof(char) + 1);
+		request_args = malloc((strlen(args) + 1) * sizeof(char));
 		strcpy(request_args, args);
 	}
 		
 	cmd->cmd_t = CMD_USER;
 	cmd->cmd_h = process_user;
+	cmd->cmd_args_field = request_args;
+	
+	return cmd;
+}
+
+struct s_cmd * new_pass(char * args)
+{
+	struct s_cmd * cmd;
+	char * request_args = NULL;
+	
+	printf("new_pass\n");
+	
+	cmd = malloc(sizeof(struct s_cmd));
+	if (cmd == NULL)
+	{
+		fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+		return NULL;
+	}
+	
+	if (args != NULL)
+	{
+		request_args = malloc((strlen(args) + 1) * sizeof(char));
+		strcpy(request_args, args);
+	}
+		
+	cmd->cmd_t = CMD_PASS;
+	cmd->cmd_h = process_pass;
 	cmd->cmd_args_field = request_args;
 	
 	return cmd;
@@ -157,12 +199,12 @@ struct s_cmd * new_syst(char * args)
 
     cmd = malloc(sizeof(struct s_cmd));
     if (cmd == NULL){
-	fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+	fprintf(stderr, "Erreur new_syst: Erreur d'allocation de memoire.\n");
 	return NULL;
     }
 
     if (args != NULL){
-	request_args = malloc(strlen(args) * sizeof(char) + 1);
+	request_args = malloc((strlen(args) + 1) * sizeof(char));
 	strcpy(request_args, args);
     }
 
@@ -180,12 +222,12 @@ struct s_cmd * new_list(char * args)
 
     cmd = malloc(sizeof(struct s_cmd));
     if (cmd == NULL){
-	fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+	fprintf(stderr, "Erreur new_list: Erreur d'allocation de memoire.\n");
 	return NULL;
     }
 
     if (args != NULL){
-	request_args = malloc(strlen(args) * sizeof(char) + 1);
+	request_args = malloc((strlen(args) + 1) * sizeof(char));
 	strcpy(request_args, args);
     }
 
@@ -201,17 +243,83 @@ struct s_cmd * new_list(char * args)
 
 void process_user(struct s_cmd * cmd)
 {
-	printf("Ok %s\n", cmd->cmd_args_field);
-	strncpy(cmd->cmd_client->cli_current_path, "somewhere", PATHNAME_MAXLEN);
-	printf("Chemin : %s\n", cmd->cmd_client->cli_current_path);
+	char * password;
+	char * path;
+	char buf[BUF_SIZE+1];
+	
+	/* Si la requete contient plusieurs arguments. */
+	if (cmd->cmd_args_field == NULL || strtok(cmd->cmd_args_field, " \f\n\r\t\v") != cmd->cmd_args_field)
+	{
+		snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+		write_client(cmd->cmd_client->cli_sock, buf);
+		
+		return;
+	}
+	
+	printf("Recherche de l'utilisateur %s\n", cmd->cmd_args_field);
+	
+	if (get_user_info(cmd->cmd_args_field, &password, &path))
+	{
+		cmd->cmd_client->cli_username = cmd->cmd_args_field;
+		snprintf(buf, BUF_SIZE, "331 User name okay, need password.\r\n");
+		write_client(cmd->cmd_client->cli_sock, buf);
+	}
+	else
+	{
+		snprintf(buf, BUF_SIZE, "530 Not logged in. Unknown username.\r\n");
+		write_client(cmd->cmd_client->cli_sock, buf);
+	}
+	
+	return;
+}
+
+void process_pass(struct s_cmd * cmd)
+{
+	char * password;
+	char * path;
+	char buf[BUF_SIZE+1];
+	
+	/* Si la requete contient plusieurs arguments. */
+	if (cmd->cmd_args_field == NULL || strtok(cmd->cmd_args_field, " \f\n\r\t\v") != cmd->cmd_args_field)
+	{
+		snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+		write_client(cmd->cmd_client->cli_sock, buf);
+		
+		return;
+	}
+	
+	printf("Verification mdp %s\n", cmd->cmd_args_field);
+	
+	if (get_user_info(cmd->cmd_client->cli_username, &password, &path))
+	{
+		if (strcmp(password, cmd->cmd_args_field) == 0)
+		{
+			cmd->cmd_client->cli_logged_in = 1;
+			snprintf(buf, BUF_SIZE, "230 User logged in, proceed.\r\n");
+			write_client(cmd->cmd_client->cli_sock, buf);
+		}
+		else
+		{
+			snprintf(buf, BUF_SIZE, "530 Not logged in. Bad password.\r\n");
+			write_client(cmd->cmd_client->cli_sock, buf);
+		}
+	}
+	else
+	{
+		snprintf(buf, BUF_SIZE, "530 Not logged in. Unknown username.\r\n");
+		write_client(cmd->cmd_client->cli_sock, buf);
+	}
 	
 	return;
 }
 
 void process_quit(struct s_cmd * cmd)
 {
+	char buf[BUF_SIZE+1];
+	
 	printf("Fin connexion\n");
-       
+    snprintf(buf, BUF_SIZE, "221 Service closing control connection.\r\n");
+	write_client(cmd->cmd_client->cli_sock, buf);
 	close_connection(cmd->cmd_client);
 	
 	return;
