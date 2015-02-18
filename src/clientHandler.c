@@ -28,7 +28,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 	client.cli_sock = socket;
 	client.cli_data_connection = new_data_connection(client_addr);
-	
+		
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
 	write_socket(client.cli_sock, buf);
