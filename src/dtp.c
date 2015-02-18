@@ -93,7 +93,7 @@ int close_data_connection(struct s_data_connection * dc)
 
 void set_port(struct s_data_connection * dc, unsigned short port)
 {
-	dc->dc_addr.sin_port = port;
+	dc->dc_addr.sin_port = htons(port);
 }
 
 void set_transfer_t_active(struct s_data_connection * dc)
