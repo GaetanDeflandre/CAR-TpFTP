@@ -68,6 +68,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 				}
 			} else if (cmd->cmd_t == CMD_USER) // (Re)commencement du login.
 			{
+				memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 				free(client.cli_username);
 				client.cli_username = NULL;
 				client.cli_logged_in = 0;
@@ -78,6 +79,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
+				memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 				free(client.cli_username);
 				client.cli_username = NULL;
 				waitingForPassword = 0;
@@ -96,6 +98,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
+				memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 				free(client.cli_username);
 				client.cli_username = NULL;
 				waitingForPassword = 0;
