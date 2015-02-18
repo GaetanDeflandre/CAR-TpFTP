@@ -379,7 +379,7 @@ void process_list(struct s_cmd * cmd)
 
     /* OPEN DIR */
     if(status>=0){
-	pDir = opendir(path);
+	pDir = opendir("files/toto"/*path*/);
 	if (pDir == NULL) {
 	    perror("Erreur opendir: ");
 	    status = -2;
@@ -394,9 +394,19 @@ void process_list(struct s_cmd * cmd)
 		perror("Erreur strncpy: ");
 		status = -1;
 	    }
+
+	    if(strcat(buf, "  ")== NULL){
+		perror("Erreur strcat: ");
+		status = -1;
+	    }
 	
 	    while ((pDirent = readdir(pDir)) != NULL) {
 		if(strcat(buf, pDirent->d_name)== NULL){
+		    perror("Erreur strcat: ");
+		    status = -1;
+		    break;
+		}
+		if(strcat(buf, "  ")== NULL){
 		    perror("Erreur strcat: ");
 		    status = -1;
 		    break;
