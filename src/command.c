@@ -1,20 +1,25 @@
-#include "command.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <database.h>
+#include <dirent.h>
+
+#include "command.h"
+#include "database.h"
 
 #define CODE_USER "USER"
 #define CODE_QUIT "QUIT"
+#define CODE_LIST "LIST"
 
 /* CREATION DE COMMANDES */
 struct s_cmd * new_user(char * args);
 struct s_cmd * new_quit(char * args);
+struct s_cmd * new_list(char * args);
 
 /* HANDLERS DES COMMANDES */
 void process_user(struct s_cmd * cmd);
 void process_quit(struct s_cmd * cmd);
+void process_list(struct s_cmd * cmd);
 
 struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 {
@@ -44,6 +49,10 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	else if (strncasecmp(request_code, CODE_QUIT, strlen(request_code)) == 0)
 	{
 		cmd = new_quit(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_LIST, strlen(request_code)) == 0)
+	{
+		cmd = new_list(request_args);
 	}
 	else
 	{
@@ -115,11 +124,23 @@ struct s_cmd * new_quit(char * args)
 struct s_cmd * new_list(char * args)
 {
     struct s_cmd * cmd;
-    /*char * request_args;*/
+    char * request_args = NULL;
 
-    printf("new_list\n");
     cmd = malloc(sizeof(struct s_cmd));
-        
+    if (cmd == NULL){
+	fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+	return NULL;
+    }
+
+    if (args != NULL){
+	request_args = malloc(strlen(args) * sizeof(char) + 1);
+	strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_LIST;
+    cmd->cmd_h = process_list;
+    cmd->cmd_args_field = request_args;
+	
     return cmd;
 }
 
@@ -138,8 +159,22 @@ void process_user(struct s_cmd * cmd)
 void process_quit(struct s_cmd * cmd)
 {
 	printf("Fin connexion\n");
-	
+       
 	close_connection(cmd->cmd_client);
 	
 	return;
+}
+
+void process_list(struct s_cmd * cmd)
+{
+    DIR *pDir;
+    
+    pDir = opendir("files");
+    if (pDir == NULL) {
+        perror("Erreur opendir: ");
+	return;
+    }
+
+    printf("process_list\n");
+    return;
 }
