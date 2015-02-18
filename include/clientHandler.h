@@ -41,7 +41,20 @@ struct s_client
  * appropriées jusqu'à la fin de la connexion. 
  */
 void handle_client(struct sockaddr_in client_addr, int socket);
+
+/**
+ * Ecrit le ocntenu d'un buffer dans le socket du client.
+ *
+ * @param[in] socket Le socket du client.
+ * @param[in] buf le buffer à envoyer.
+ * @return le nombre d'octets envoyés ou
+ *         -1 en cas d'erreur.<br\>
+ */
 ssize_t write_client(int socket, char * buf);
+/**
+ * Termine la connection avec le client.
+ * @param[in] client le client avec lequel la connection est fermée.
+ */
 void close_connection(struct s_client * client);
 
 #endif /* CLIENT_HANDLER_H_ */
