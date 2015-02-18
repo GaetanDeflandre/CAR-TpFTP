@@ -440,8 +440,9 @@ void process_syst(struct s_cmd * cmd)
 void process_port(struct s_cmd * cmd)
 {
     char buf[MESSAGE_SIZE];
-    /*char* addr[NB_AGRS_PORT];*/
+    char* addr[NB_AGRS_PORT];
     unsigned i;
+    unsigned short x, y, port;
 
     if(cmd->cmd_args_field == NULL){
 	/* Syntax error in parameters or arguments. */
@@ -453,21 +454,43 @@ void process_port(struct s_cmd * cmd)
 	}
     }
 
-    printf("%s!", strtok(cmd->cmd_args_field, ","));
-    for(i=0; i<NB_AGRS_PORT-1; i++){
-	printf("%s!", strtok(NULL, ""));
+    addr[0] = strtok(cmd->cmd_args_field, ",");
+    if(addr[0] == NULL){
+	/* Syntax error in parameters or arguments. */
+	snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+	
+	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+	    perror("Erreur write: ");
+	    return;
+	}
     }
-    printf("\n");
 
-    printf("args: %s\n", cmd->cmd_args_field);
+    for(i=1; i<NB_AGRS_PORT; i++){
+	addr[i] = strtok(NULL, ",");
+	if(addr[i] == NULL){
+	    /* Syntax error in parameters or arguments. */
+	    snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+	
+	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+		perror("Erreur write: ");
+		return;
+	    }
+	}
+    }
+    x = atoi(addr[4]);
+    y = atoi(addr[5]);
+    port = x*256 + y;
+    set_port(cmd->cmd_client->cli_data_connection, port);
+    printf("%d * 256 + %d = %d\n", x, y, port);
 
-
-    snprintf(buf, BUF_SIZE, "215 linux\r\n");
+    /* Command okay. */
+    snprintf(buf, BUF_SIZE, "200 Command okay.\r\n");
     
     if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
 	perror("Erreur write: ");
 	return;
-	}
+    }
+
     return;
 }
 
