@@ -36,6 +36,8 @@ void handle_client(struct sockaddr_in client_addr, int socket)
     /* Boucle de traitement de requetes. Une requete par tour. */
     while(1)
     {
+		printf("u= %s\np= %s\n", client.cli_username, client.cli_current_path);
+		
 		/* Lecture requete */
 		req_size = read_client_request(client.cli_sock, &request);
 		printf("Size of request: %d\nRequest: %s\n", req_size, request);
@@ -79,9 +81,12 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
-				memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
-				free(client.cli_username);
-				client.cli_username = NULL;
+				if (!client.cli_logged_in)
+				{
+					memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
+					free(client.cli_username);
+					client.cli_username = NULL;
+				}
 				waitingForPassword = 0;
 			}
 			
@@ -98,9 +103,12 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			
 			if (waitingForPassword)
 			{
-				memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
-				free(client.cli_username);
-				client.cli_username = NULL;
+				if (!client.cli_logged_in)
+				{
+					memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
+					free(client.cli_username);
+					client.cli_username = NULL;
+				}
 				waitingForPassword = 0;
 			}
 		}
