@@ -379,8 +379,8 @@ void process_syst(struct s_cmd * cmd)
 void process_port(struct s_cmd * cmd)
 {
     char buf[MESSAGE_SIZE];
-    /*char addr[3][NB_AGRS_PORT];
-      unsigned i;*/
+    /*char addr[NB_AGRS_PORT][3];
+      unsigned len, i;*/
 
     if(cmd->cmd_args_field == NULL){
 	/* Syntax error in parameters or arguments. */
@@ -392,11 +392,12 @@ void process_port(struct s_cmd * cmd)
 	}
     }
 
-    /* for(){
+    /*len = strlen(cmd->cmd_args_field)
+	for(i=0; ){
 
-       }*/
+    }
 
-    printf("args: %s\n", cmd->cmd_args_field);
+    printf("args: %s\n", cmd->cmd_args_field);*/
 
 
     /*snprintf(buf, BUF_SIZE, "215 linux\r\n");
@@ -502,6 +503,26 @@ void process_list(struct s_cmd * cmd)
 	}
 	if(c_data_connect->dc_transfer_t == DT_ACTIVE){
 
+	    if(open_data_connection(c_data_connect) == -1){
+		fprintf(stderr, "Erreur: Ouverture connection data.\n");
+		status = -1;
+	    }
+
+	    write_data(buf, c_data_connect);
+
+	    if(close_data_connection(c_data_connect) == -1){
+		fprintf(stderr, "Erreur: Fermeture connection data.\n");
+		status = -1;
+	    }
+
+	    /* Closing data connection. */
+	    snprintf(buf, BUF_SIZE, "226 Closing data connection.\r\n");
+
+	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+		perror("Erreur write: ");
+		return;
+	    }
+	    return;
 
 	} else {
 	    /* Command not implemented for that parameter. */
