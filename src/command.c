@@ -572,28 +572,37 @@ void process_list(struct s_cmd * cmd)
     if(status>=0){
 
 	/* SEND LIST*/
-	/* File status okay; about to open data connection. */
-	snprintf(buf, BUF_SIZE, "125 File status okay; about to open data connection.\r\n");
-
-	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	    perror("Erreur write: ");
-	    status = -1;
-	}
-
 	c_data_connect = client->cli_data_connection;
 	if(c_data_connect == NULL){
 	    fprintf(stderr, "Erreur: champ cli_data_connection null.\n");
 	    status = -1;
 	}
+
 	if(c_data_connect->dc_transfer_t == DT_ACTIVE){
 		
-		if (!is_data_connection_opened(c_data_connect))
-		{
-			if(open_data_connection(c_data_connect) == -1){
-			fprintf(stderr, "Erreur: Ouverture connection data.\n");
-			status = -1;
-			}
+	    if (!is_data_connection_opened(c_data_connect)){
+		
+		if(open_data_connection(c_data_connect) == -1){
+		    fprintf(stderr, "Erreur: Ouverture connection data.\n");
+		    status = -3;
 		}
+
+		/* File status okay; about to open data connection. */
+		snprintf(buf, BUF_SIZE, "150 File status okay; about to open data connection.\r\n");
+	
+		if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+		    perror("Erreur write: ");
+		    return;
+		}
+	    } else {
+		/* Data connection already open; transfer starting. */
+		snprintf(buf, BUF_SIZE, "125 Data connection already open; transfer starting.\r\n");
+	
+		if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+		    perror("Erreur write: ");
+		    return;
+		}
+	    }
 
 	    write_data(bufData, c_data_connect);
 	    printf("--- buf envoyé: %s\n", bufData);
@@ -620,22 +629,12 @@ void process_list(struct s_cmd * cmd)
 		perror("Erreur write: ");
 		status = -1;
 	    }
-
 	}
     }
-    
-    if(status == 0){
-	/* Closing data connection. */
-	snprintf(buf, BUF_SIZE, "125 Closing data connection.\r\n");
-	
-	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	    perror("Erreur write: ");
-	    return;
-	}
 
-    } else if(status == -1){
-	/* Connection closed; transfer aborted. */
-	snprintf(buf, BUF_SIZE, "426 Connection closed; transfer aborted.\r\n");
+    if(status == -1){
+	/* Requested action aborted: local error in processing. */
+	snprintf(buf, BUF_SIZE, "451 Requested action aborted: local error in processing.\r\n");
 
 	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
 	    perror("Erreur write: ");
@@ -644,6 +643,14 @@ void process_list(struct s_cmd * cmd)
     } else if(status == -2){
 	/* Syntax error in parameters or arguments. */
 	snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+
+	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+	    perror("Erreur write: ");
+	    return;
+	}
+    } else if(status == -3){
+	/* Can't open data connection. */
+	snprintf(buf, BUF_SIZE, "425 Can\'t open data connection.\r\n");
 
 	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
 	    perror("Erreur write: ");
