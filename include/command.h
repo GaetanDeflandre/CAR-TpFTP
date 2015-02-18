@@ -3,8 +3,8 @@
 
 #include <clientHandler.h>
 
-/* 1024 + 1 pour le '\0' */
-#define MAX_LINE_LENGTH 1025
+/* 2048 + 1 pour le '\0' */
+#define MAX_REQUEST_LENGTH 2049
 
 /**
  * @file command.h

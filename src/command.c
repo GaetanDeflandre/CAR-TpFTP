@@ -21,7 +21,7 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	struct s_cmd * cmd;
 	char *request_code, *request_args;
 	char * cr_char;
-	char request_line[MAX_LINE_LENGTH];
+	char request_line[MAX_REQUEST_LENGTH];
 	
 	strncpy(request_line, client_request, MAX_LINE_LENGTH);
 	
