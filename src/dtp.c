@@ -22,7 +22,7 @@ struct s_data_connection * new_data_connection(struct sockaddr_in data_addr)
 	}
 	
 	dc->dc_socket = -1;
-	data_addr.sin_port = ntohs(data_addr.sin_port);
+	data_addr.sin_port = data_addr.sin_port;
 	dc->dc_addr = data_addr;
 	dc->dc_transfer_t = DT_ACTIVE;
 	
@@ -32,6 +32,7 @@ struct s_data_connection * new_data_connection(struct sockaddr_in data_addr)
 int open_data_connection(struct s_data_connection * dc)
 {
 	struct sockaddr_in serv_addr;
+	int sock_opt_reuse_addr = 1;
 	
 	if (dc->dc_socket != -1)
 	{
@@ -42,6 +43,7 @@ int open_data_connection(struct s_data_connection * dc)
 	if (dc->dc_transfer_t == DT_ACTIVE)
 	{
 		dc->dc_socket = socket(AF_INET, SOCK_STREAM, 0);
+		setsockopt(dc->dc_socket, SOL_SOCKET, SO_REUSEADDR, &sock_opt_reuse_addr, sizeof(int));
 		if (dc->dc_socket < 0)
 		{
 			perror("Erreur open_data_connection (socket): ");
@@ -74,6 +76,8 @@ int open_data_connection(struct s_data_connection * dc)
 		fprintf(stderr, "Erreur open_data_connection: type de transfert inconnu ou invalide.\n");
 		return -1;
 	}
+	
+	printf("###--- Conn OK sur %d %d\n", dc->dc_addr.sin_port, ntohs(dc->dc_addr.sin_port));
 	
 	return 1;
 }

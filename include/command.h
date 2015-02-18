@@ -6,7 +6,6 @@
 /** Taille maximum d'une requete: 2048 + 1 pour le '\0' */
 #define MAX_REQUEST_LENGTH 2049
 /** Taille des message envoyer au client sur la sockets des requêtes. */
-#define MESSAGE_SIZE 1025
 #define NB_AGRS_PORT 6
 
 /**

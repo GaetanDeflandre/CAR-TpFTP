@@ -425,7 +425,7 @@ void process_quit(struct s_cmd * cmd)
 
 void process_syst(struct s_cmd * cmd)
 {
-    char buf[MESSAGE_SIZE];
+    char buf[BUF_SIZE + 1];
 
     /* NAME system type. */
     snprintf(buf, BUF_SIZE, "215 linux\r\n");
@@ -439,7 +439,7 @@ void process_syst(struct s_cmd * cmd)
 
 void process_port(struct s_cmd * cmd)
 {
-    char buf[MESSAGE_SIZE];
+    char buf[BUF_SIZE + 1];
     char* addr[NB_AGRS_PORT];
     unsigned i;
     unsigned short x, y, port;
@@ -498,7 +498,8 @@ void process_list(struct s_cmd * cmd)
 {
     DIR *pDir;
     struct dirent *pDirent;
-    char buf[MESSAGE_SIZE];
+    char buf[BUF_SIZE + 1];
+    char bufData[BUF_SIZE + 1];
     char path[PATHNAME_MAXLEN];
     int status = 0;
     struct s_client * client;
@@ -540,33 +541,33 @@ void process_list(struct s_cmd * cmd)
     if(status>=0){
 	if((pDirent = readdir(pDir)) != NULL){
 
-	    if(strncpy(buf, pDirent->d_name, MESSAGE_SIZE-1) == NULL){
+	    if(strncpy(bufData, pDirent->d_name, BUF_SIZE) == NULL){
 		perror("Erreur strncpy: ");
 		status = -1;
 	    }
 
-	    if(strcat(buf, "  ")== NULL){
+	    if(strcat(bufData, "  ")== NULL){
 		perror("Erreur strcat: ");
 		status = -1;
 	    }
 	
 	    while ((pDirent = readdir(pDir)) != NULL) {
-		if(strcat(buf, pDirent->d_name)== NULL){
+		if(strcat(bufData, pDirent->d_name)== NULL){
 		    perror("Erreur strcat: ");
 		    status = -1;
 		    break;
 		}
-		if(strcat(buf, "  ")== NULL){
+		if(strcat(bufData, "  ")== NULL){
 		    perror("Erreur strcat: ");
 		    status = -1;
 		    break;
 		}
 	    }
 
-	    strcat(buf, "\r\n");
+	    strcat(bufData, "\r\n");
 
 	} else {
-	    buf[0] = '\0';
+	    bufData[0] = '\0';
 	}
     }
 
@@ -587,13 +588,17 @@ void process_list(struct s_cmd * cmd)
 	    status = -1;
 	}
 	if(c_data_connect->dc_transfer_t == DT_ACTIVE){
+		
+		if (!is_data_connection_opened(c_data_connect))
+		{
+			if(open_data_connection(c_data_connect) == -1){
+			fprintf(stderr, "Erreur: Ouverture connection data.\n");
+			status = -1;
+			}
+		}
 
-	    if(open_data_connection(c_data_connect) == -1){
-		fprintf(stderr, "Erreur: Ouverture connection data.\n");
-		status = -1;
-	    }
-
-	    write_data(buf, c_data_connect);
+	    write_data(bufData, c_data_connect);
+	    printf("--- buf envoyé: %s\n", bufData);
 
 	    if(close_data_connection(c_data_connect) == -1){
 		fprintf(stderr, "Erreur: Fermeture connection data.\n");
