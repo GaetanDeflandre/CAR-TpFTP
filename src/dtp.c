@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 struct s_data_connection * new_data_connection(struct sockaddr_in data_addr)
 {
@@ -125,6 +128,8 @@ ssize_t write_data(char * message, struct s_data_connection * dc)
 
 ssize_t read_file(char * pathname, struct s_data_connection * dc)
 {
+	//~ open(pathname, O_CREATE | O_WRONLY
+	
 	fprintf(stderr, "NYI !\n");
 	return -1;
 }
