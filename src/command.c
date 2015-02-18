@@ -381,8 +381,8 @@ void process_syst(struct s_cmd * cmd)
 void process_port(struct s_cmd * cmd)
 {
     char buf[MESSAGE_SIZE];
-    /*char addr[NB_AGRS_PORT][3];
-      unsigned len, i;*/
+    /*char* addr[NB_AGRS_PORT];*/
+    unsigned i;
 
     if(cmd->cmd_args_field == NULL){
 	/* Syntax error in parameters or arguments. */
@@ -394,20 +394,21 @@ void process_port(struct s_cmd * cmd)
 	}
     }
 
-    /*len = strlen(cmd->cmd_args_field)
-	for(i=0; ){
-
+    printf("%s!", strtok(cmd->cmd_args_field, ","));
+    for(i=0; i<NB_AGRS_PORT-1; i++){
+	printf("%s!", strtok(NULL, ""));
     }
+    printf("\n");
 
-    printf("args: %s\n", cmd->cmd_args_field);*/
+    printf("args: %s\n", cmd->cmd_args_field);
 
 
-    /*snprintf(buf, BUF_SIZE, "215 linux\r\n");
+    snprintf(buf, BUF_SIZE, "215 linux\r\n");
     
     if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
 	perror("Erreur write: ");
 	return;
-	}*/
+	}
     return;
 }
 
