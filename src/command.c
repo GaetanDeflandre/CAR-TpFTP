@@ -19,6 +19,7 @@
 #define CODE_PASS "PASS"
 #define CODE_QUIT "QUIT"
 #define CODE_SYST "SYST"
+#define CODE_PORT "PORT"
 #define CODE_LIST "LIST"
 
 /* CREATION DE COMMANDES */
@@ -26,6 +27,7 @@ struct s_cmd * new_user(char * args);
 struct s_cmd * new_pass(char * args);
 struct s_cmd * new_quit(char * args);
 struct s_cmd * new_syst(char * args);
+struct s_cmd * new_port(char * args);
 struct s_cmd * new_list(char * args);
 
 /* HANDLERS DES COMMANDES */
@@ -33,6 +35,7 @@ void process_user(struct s_cmd * cmd);
 void process_pass(struct s_cmd * cmd);
 void process_quit(struct s_cmd * cmd);
 void process_syst(struct s_cmd * cmd);
+void process_port(struct s_cmd * cmd);
 void process_list(struct s_cmd * cmd);
 
 void not_implemented_command(struct s_client * client);
@@ -81,6 +84,10 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	else if (strncasecmp(request_code, CODE_SYST, strlen(request_code)) == 0)
 	{
 		cmd = new_syst(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_PORT, strlen(request_code)) == 0)
+	{
+		cmd = new_port(request_args);
 	}
 	else if (strncasecmp(request_code, CODE_LIST, strlen(request_code)) == 0)
 	{
@@ -217,6 +224,29 @@ struct s_cmd * new_syst(char * args)
     return cmd;
 }
 
+struct s_cmd * new_port(char * args)
+{
+    struct s_cmd * cmd;
+    char * request_args = NULL;
+
+    cmd = malloc(sizeof(struct s_cmd));
+    if (cmd == NULL){
+	fprintf(stderr, "Erreur new_port: Erreur d'allocation de memoire.\n");
+	return NULL;
+    }
+
+    if (args != NULL){
+	request_args = malloc((strlen(args) + 1) * sizeof(char));
+	strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_PORT;
+    cmd->cmd_h = process_port;
+    cmd->cmd_args_field = request_args;
+	
+    return cmd;
+}
+
 struct s_cmd * new_list(char * args)
 {
     struct s_cmd * cmd;
@@ -334,7 +364,7 @@ void process_quit(struct s_cmd * cmd)
 
 void process_syst(struct s_cmd * cmd)
 {
-    char buf[BUF_SIZE];
+    char buf[MESSAGE_SIZE];
 
     /* NAME system type. */
     snprintf(buf, BUF_SIZE, "215 linux\r\n");
@@ -343,6 +373,38 @@ void process_syst(struct s_cmd * cmd)
 	perror("Erreur write: ");
 	return;
     }
+    return;
+}
+
+void process_port(struct s_cmd * cmd)
+{
+    char buf[MESSAGE_SIZE];
+    /*char addr[3][NB_AGRS_PORT];
+      unsigned i;*/
+
+    if(cmd->cmd_args_field == NULL){
+	/* Syntax error in parameters or arguments. */
+	snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+
+	if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+	    perror("Erreur write: ");
+	    return;
+	}
+    }
+
+    /* for(){
+
+       }*/
+
+    printf("args: %s\n", cmd->cmd_args_field);
+
+
+    /*snprintf(buf, BUF_SIZE, "215 linux\r\n");
+    
+    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+	perror("Erreur write: ");
+	return;
+	}*/
     return;
 }
 
@@ -369,17 +431,19 @@ void process_list(struct s_cmd * cmd)
 	status = -1;
     }
     if(cmd->cmd_args_field != NULL){
+	if(strcat(path, "/") == NULL){
+	    perror("Erreur strcat: ");
+	    status = -1;
+	}
 	if(strcat(path, cmd->cmd_args_field) == NULL){
 	    perror("Erreur strcat: ");
 	    status = -1;
 	}
     }
 
-    printf("path: %s\n", path);
-
     /* OPEN DIR */
     if(status>=0){
-	pDir = opendir("files/toto"/*path*/);
+	pDir = opendir(path);
 	if (pDir == NULL) {
 	    perror("Erreur opendir: ");
 	    status = -2;

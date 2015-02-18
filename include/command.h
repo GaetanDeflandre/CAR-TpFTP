@@ -7,6 +7,7 @@
 #define MAX_REQUEST_LENGTH 2049
 /** Taille des message envoyer au client sur la sockets des requêtes. */
 #define MESSAGE_SIZE 1025
+#define NB_AGRS_PORT 6
 
 /**
  * @file command.h
@@ -14,7 +15,7 @@
  */
 
 /** Les types des commandes */
-enum cmd_type {CMD_USER, CMD_PASS, CMD_SYST, CMD_LIST, CMD_RETR, CMD_STOR, 
+enum cmd_type {CMD_USER, CMD_PASS, CMD_SYST, CMD_PORT, CMD_LIST, CMD_RETR, CMD_STOR, 
 	CMD_QUIT, CMD_PASV, CMD_PWD, CMD_CWD, CMD_CDUP, CMD_MKD, CMD_RMD};
 /**
  * @struct s_cmd
