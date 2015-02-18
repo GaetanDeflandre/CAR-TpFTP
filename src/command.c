@@ -298,12 +298,14 @@ void process_pass(struct s_cmd * cmd)
 		if (strcmp(password, cmd->cmd_args_field) == 0)
 		{
 			cmd->cmd_client->cli_logged_in = 1;
+			strncpy(cmd->cmd_client->cli_current_path, path, PATHNAME_MAXLEN);
 			snprintf(buf, BUF_SIZE, "230 User logged in, proceed.\r\n");
 			write_socket(cmd->cmd_client->cli_sock, buf);
 		}
 		else
 		{
 			free(cmd->cmd_client->cli_username);
+			memset(cmd->cmd_client->cli_current_path, 0, PATHNAME_MAXLEN);
 			cmd->cmd_client->cli_username = NULL;
 			snprintf(buf, BUF_SIZE, "530 Not logged in. Bad password.\r\n");
 			write_socket(cmd->cmd_client->cli_sock, buf);
