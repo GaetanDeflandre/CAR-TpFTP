@@ -93,31 +93,31 @@ int launch_server(){
     
     while(1){
 
-	clientfd = accept(listenfd, (struct sockaddr *) &cli_addr, &sock_len);
-	if(clientfd == -1){
-	    perror("Erreur accept: ");
-	    return -1;
-	}
+		clientfd = accept(listenfd, (struct sockaddr *) &cli_addr, &sock_len);
+		if(clientfd == -1){
+			perror("Erreur accept: ");
+			return -1;
+		}
 
-	printf("Nouveau client\n");
-       
-	cpid = fork();
-	switch (cpid)
-	    {
-	    case -1: /* Erreur */
-		perror("Erreur fork: ");
-		return -1;
+		printf("Nouveau client\n");
+		   
+		cpid = fork();
+		switch (cpid)
+		{
+			case -1: /* Erreur */
+			perror("Erreur fork: ");
+			return -1;
 
-	    case 0: /* Fils */
-		handle_client(cli_addr, clientfd);
-		close(clientfd);
-	
-		return 0;
-		break;
-	
-	    default: /* Père */
-		break;
-	    }
+			case 0: /* Fils */
+			handle_client(cli_addr, clientfd);
+			close(clientfd);
+		
+			return 0;
+			break;
+		
+			default: /* Père */
+				close(clientfd);
+		}
     }
     
     close(clientfd);	

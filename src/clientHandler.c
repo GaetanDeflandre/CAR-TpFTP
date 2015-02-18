@@ -27,10 +27,10 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
 	if(write(client.cli_sock, buf, strlen(buf)) == -1)
-	    {
+	{
 		perror("Erreur write: ");
 		exit(EXIT_FAILURE);
-	    }
+	}
     
     while(1)
     {

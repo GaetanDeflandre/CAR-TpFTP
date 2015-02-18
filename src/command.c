@@ -51,7 +51,9 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	}
 	
 	if (cmd != NULL)
+	{
 		cmd->cmd_client = client;
+	}
 		
 	return cmd;
 }
@@ -67,21 +69,23 @@ void exec_cmd(struct s_cmd * cmd)
 struct s_cmd * new_user(char * args)
 {
 	struct s_cmd * cmd;
-	char * request_args;
+	char * request_args = NULL;
 	
 	printf("new_user\n");
 	
-	request_args = malloc(strlen(args) * sizeof(char) + 1);
 	cmd = malloc(sizeof(struct s_cmd));
-	
-	if (request_args == NULL || cmd == NULL)
+	if (cmd == NULL)
 	{
 		fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
 		return NULL;
 	}
 	
-	strcpy(request_args, args);
-	
+	if (args != NULL)
+	{
+		request_args = malloc(strlen(args) * sizeof(char) + 1);
+		strcpy(request_args, args);
+	}
+		
 	cmd->cmd_t = CMD_USER;
 	cmd->cmd_h = process_user;
 	cmd->cmd_args_field = request_args;
