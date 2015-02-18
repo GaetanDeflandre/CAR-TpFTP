@@ -78,7 +78,7 @@ bin:
 ###------------------------------
 ### Compile source
 ###------------------------------------------------------------
-obj/servFTP.o:		src/servFTP.c include/servFTP.h
+obj/servFTP.o:		src/servFTP.c include/servFTP.h obj/database.o
 obj/clientHandler.o:	src/clientHandler.c include/clientHandler.h
 obj/command.o:		src/command.c include/command.h 
 obj/database.o:		src/database.c include/database.h

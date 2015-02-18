@@ -78,6 +78,7 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 
 	if(n->type == XML_ELEMENT_NODE && strcmp((char*)(n->name), "login") == 0){
 	    xml_name = xmlNodeGetContent(n);
+	    printf("xml_name: %s\n", (char *) xml_name);
 	    if(strcmp((char*)xml_name, name) == 0){
 
 		if(n->next==NULL || n->next->next==NULL){
@@ -99,7 +100,7 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 		    if(*password != NULL){
 			strncpy(*password, (char*)xml_password, PASSWORD_MAXLEN);
 		    }
-		    if(*password == NULL){
+		    else{
 			fprintf(stderr, "Erreur: lors de la copy du mot de passe.\n");
 			xmlFree(xml_name);
 			xmlFree(xml_password);
@@ -113,23 +114,17 @@ int walker(const xmlNodePtr node, const char* name, char** password, char** path
 		    if(*path != NULL){
 			strncpy(*path, FILES_DIR, PATHNAME_MAXLEN);
 		    }
-		    if(*path == NULL){
+		    else{
 			fprintf(stderr, "Erreur: lors de la copy du répertoire utilisateur.\n");
-			xmlFree(xml_name);
-			xmlFree(xml_password);
 			return -1;
 		    }
 		    
 		    strncat(*path, name, PATHNAME_MAXLEN - strlen(name) -1);
 		    if(*path == NULL){
 			fprintf(stderr, "Erreur strncat: echec écriture sur nom de répertorie.\n");
-			xmlFree(xml_name);
-			xmlFree(xml_password);
 			return -1;
 		    }
 
-		    xmlFree(xml_name);
-		    xmlFree(xml_password);
 		    return 1;
 		} else {
 		    fprintf(stderr, "Erreur: pas de mot de passe après login.\n");
