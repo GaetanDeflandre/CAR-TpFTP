@@ -1,6 +1,7 @@
 #include "clientHandler.h"
 #include "command.h"
 #include "servFTP.h"
+#include "dtp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,9 +26,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	client.cli_logged_in = 0;
 	memset(client.cli_current_path, 0, PATHNAME_MAXLEN);
 	client.cli_sock = socket;
-	client.cli_addr = client_addr;
-	client.cli_data_port = client.cli_addr.sin_port;
-	client.cli_data_transfer_t = NORMAL_DT;
+	client.cli_data_connection = new_data_connection(client_addr);
 	
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");

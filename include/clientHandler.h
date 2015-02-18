@@ -5,14 +5,12 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "database.h"
+#include "dtp.h"
 
 /**
  * @file clientHandler.h
  * @brief Gére les commandes provenant du client
  */
-
-/** Type de transfert de données : passif ou non. */
-enum data_transfer_type {NORMAL_DT, PASSIVE_DT};
 
 /** 
  * Structure représentant les paramètres d'une connexion avec un 
@@ -30,10 +28,8 @@ struct s_client
     int cli_sock;
     /** Adresse du client */
     struct sockaddr_in cli_addr;
-    /** Port du client */
-    unsigned short cli_data_port;
-    /** Type de transfert de données */
-    enum data_transfer_type cli_data_transfer_t;
+    /** Paramètres de transfert de données du client */
+    struct s_data_connection * cli_data_connection;
 };
 
 /** 

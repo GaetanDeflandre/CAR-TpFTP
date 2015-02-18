@@ -11,7 +11,8 @@
 
 #include <servFTP.h>
 #include "command.h"
-#include <database.h>
+#include "database.h"
+#include "dtp.h"
 
 #define CODE_USER "USER"
 #define CODE_PASS "PASS"
