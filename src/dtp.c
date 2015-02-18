@@ -131,8 +131,11 @@ ssize_t write_data(char * message, struct s_data_connection * dc)
 ssize_t read_file(char * pathname, struct s_data_connection * dc)
 {
 	char buf[BUF_SIZE + 1];
-	int fd;
+	int fd, nl_found;
+	char * crlf, *nl_start;
 	ssize_t ret, nb_read_chars=0;
+	
+	memset(buf, 0, BUF_SIZE + 1);
 	
 	if (dc->dc_socket < 0)
 	{
@@ -147,18 +150,39 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 		return -2;
 	}
 	
-	while ((ret = read(dc->dc_socket, buf, BUF_SIZE+1)) != 0)
+	while ((ret = read(dc->dc_socket, buf, BUF_SIZE)) != 0)
 	{
+		nl_found = 0;
+		
 		if (ret < 0)
 		{
 			perror("Erreur read_file (read): ");
 			return -3;
 		}
 		
-		if (write(fd, buf, BUF_SIZE + 1) < 0)
+		nl_start = buf;
+		while((crlf = strstr(nl_start, "\r\n")) != NULL && nl_start - buf < BUF_SIZE + 1)
 		{
-			perror("Erreur read_file (write): ");
-			return -4;
+			nl_found = 1;
+			*crlf = '\n';
+			*(crlf + 1) = '\0';
+			
+			if (write(fd, nl_start, strlen(nl_start)) < 0)
+			{
+				perror("Erreur read_file (write): ");
+				return -4;
+			}
+			
+			nl_start += strlen(nl_start) + 1;
+		}
+		
+		if (!nl_found)
+		{
+			if (write(fd, buf, strlen(buf)) < 0)
+			{
+				perror("Erreur read_file (write): ");
+				return -4;
+			}
 		}
 		
 		nb_read_chars += ret;
