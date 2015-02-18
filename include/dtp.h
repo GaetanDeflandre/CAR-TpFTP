@@ -26,7 +26,7 @@ void set_port(struct s_data_connection * dc, unsigned short port);
 void set_transfer_t_active(struct s_data_connection * dc);
 void set_transfer_t_passive(struct s_data_connection * dc);
 int is_data_connection_opened(struct s_data_connection * dc);
-ssize_t write_message(char * message, struct s_data_connection * dc);
+ssize_t write_data(char * message, struct s_data_connection * dc);
 ssize_t read_file(char * pathname, struct s_data_connection * dc);
 ssize_t send_file(char * pathname, struct s_data_connection * dc);
 

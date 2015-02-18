@@ -1,5 +1,6 @@
 #include "clientHandler.h"
 #include "command.h"
+#include "communication.h"
 #include "servFTP.h"
 #include "dtp.h"
 
@@ -30,7 +31,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 	
 	/* Salutations au client */
 	snprintf(buf, BUF_SIZE, "220 Service ready\r\n");
-	write_client(client.cli_sock, buf);
+	write_socket(client.cli_sock, buf);
     
     /* Boucle de traitement de requetes. Une requete par tour. */
     while(1)
@@ -51,7 +52,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 				if (!client.cli_logged_in)
 				{
 					snprintf(buf, BUF_SIZE, "530 Not logged in.\r\n");
-					write_client(client.cli_sock, buf);
+					write_socket(client.cli_sock, buf);
 					
 					continue;
 				}
@@ -61,7 +62,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 				if (!waitingForPassword)
 				{
 					snprintf(buf, BUF_SIZE, "503 Bad sequence of commands.\r\n");
-					write_client(client.cli_sock, buf);
+					write_socket(client.cli_sock, buf);
 					
 					continue;
 				}
@@ -91,7 +92,7 @@ void handle_client(struct sockaddr_in client_addr, int socket)
 			/* Requete incorrecte. */
 		    fprintf(stderr, "Erreur cmd: request=%s\n", request);
 		    snprintf(buf, BUF_SIZE, "500 Syntax error, command unrecognized.\r\n");
-			write_client(client.cli_sock, buf);
+			write_socket(client.cli_sock, buf);
 			
 			if (waitingForPassword)
 			{
@@ -118,20 +119,6 @@ int needing_login_cmd(struct s_cmd * cmd)
 	}
 	
 	return 0;
-}
-
-ssize_t write_client(int socket, char * buf)
-{
-	ssize_t nb_bytes_written;
-	
-	nb_bytes_written = write(socket, buf, strlen(buf));
-	if(nb_bytes_written == -1)
-	{
-		perror("Erreur write: ");
-		exit(EXIT_FAILURE);
-	}
-	
-	return nb_bytes_written;
 }
 
 ssize_t read_client_request(int sockfd, char **request)

@@ -11,6 +11,7 @@
 
 #include <servFTP.h>
 #include "command.h"
+#include "communication.h"
 #include "database.h"
 #include "dtp.h"
 
@@ -252,7 +253,7 @@ void process_user(struct s_cmd * cmd)
 	if (cmd->cmd_args_field == NULL || strtok(cmd->cmd_args_field, " \f\n\r\t\v") != cmd->cmd_args_field)
 	{
 		snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
-		write_client(cmd->cmd_client->cli_sock, buf);
+		write_socket(cmd->cmd_client->cli_sock, buf);
 		
 		return;
 	}
@@ -264,12 +265,12 @@ void process_user(struct s_cmd * cmd)
 		cmd->cmd_client->cli_username = (char *) malloc((strlen(cmd->cmd_args_field) + 1) * sizeof(char));
 		strcpy(cmd->cmd_client->cli_username, cmd->cmd_args_field);
 		snprintf(buf, BUF_SIZE, "331 User name okay, need password.\r\n");
-		write_client(cmd->cmd_client->cli_sock, buf);
+		write_socket(cmd->cmd_client->cli_sock, buf);
 	}
 	else
 	{
 		snprintf(buf, BUF_SIZE, "530 Not logged in. Unknown username.\r\n");
-		write_client(cmd->cmd_client->cli_sock, buf);
+		write_socket(cmd->cmd_client->cli_sock, buf);
 	}
 	
 	return;
@@ -285,7 +286,7 @@ void process_pass(struct s_cmd * cmd)
 	if (cmd->cmd_args_field == NULL || strtok(cmd->cmd_args_field, " \f\n\r\t\v") != cmd->cmd_args_field)
 	{
 		snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
-		write_client(cmd->cmd_client->cli_sock, buf);
+		write_socket(cmd->cmd_client->cli_sock, buf);
 		
 		return;
 	}
@@ -298,20 +299,20 @@ void process_pass(struct s_cmd * cmd)
 		{
 			cmd->cmd_client->cli_logged_in = 1;
 			snprintf(buf, BUF_SIZE, "230 User logged in, proceed.\r\n");
-			write_client(cmd->cmd_client->cli_sock, buf);
+			write_socket(cmd->cmd_client->cli_sock, buf);
 		}
 		else
 		{
 			free(cmd->cmd_client->cli_username);
 			cmd->cmd_client->cli_username = NULL;
 			snprintf(buf, BUF_SIZE, "530 Not logged in. Bad password.\r\n");
-			write_client(cmd->cmd_client->cli_sock, buf);
+			write_socket(cmd->cmd_client->cli_sock, buf);
 		}
 	}
 	else
 	{
 		snprintf(buf, BUF_SIZE, "530 Not logged in. Unknown username.\r\n");
-		write_client(cmd->cmd_client->cli_sock, buf);
+		write_socket(cmd->cmd_client->cli_sock, buf);
 	}
 	
 	return;
@@ -323,7 +324,7 @@ void process_quit(struct s_cmd * cmd)
 	
 	printf("Fin connexion\n");
     snprintf(buf, BUF_SIZE, "221 Service closing control connection.\r\n");
-	write_client(cmd->cmd_client->cli_sock, buf);
+	write_socket(cmd->cmd_client->cli_sock, buf);
 	close_connection(cmd->cmd_client);
 	
 	return;
