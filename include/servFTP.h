@@ -8,7 +8,7 @@
 
 /** Port sur lequel le serveur écoute. */
 #define SERV_PORT 2121
-#define DEFAULT_DATA_PORT 20
+#define DEFAULT_DATA_PORT 2020
 /** Taille des messages qui servent à établir la connection. */
 #define BUF_SIZE 512
 

@@ -21,6 +21,8 @@
 #define CODE_SYST "SYST"
 #define CODE_PORT "PORT"
 #define CODE_LIST "LIST"
+#define CODE_RETR "RETR"
+#define CODE_STOR "STOR"
 
 /* CREATION DE COMMANDES */
 struct s_cmd * new_user(char * args);

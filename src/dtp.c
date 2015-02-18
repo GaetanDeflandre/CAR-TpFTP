@@ -22,6 +22,7 @@ struct s_data_connection * new_data_connection(struct sockaddr_in data_addr)
 	}
 	
 	dc->dc_socket = -1;
+	data_addr.sin_port = ntohs(data_addr.sin_port);
 	dc->dc_addr = data_addr;
 	dc->dc_transfer_t = DT_ACTIVE;
 	
@@ -74,8 +75,7 @@ int open_data_connection(struct s_data_connection * dc)
 		return -1;
 	}
 	
-	fprintf(stderr, "NYI !\n");
-	return -1;
+	return 1;
 }
 
 int close_data_connection(struct s_data_connection * dc)
@@ -108,7 +108,7 @@ void set_transfer_t_passive(struct s_data_connection * dc)
 
 int is_data_connection_opened(struct s_data_connection * dc)
 {
-	return dc == NULL || dc->dc_socket < 0;
+	return dc != NULL && dc->dc_socket >= 0;
 }
 
 ssize_t write_data(char * message, struct s_data_connection * dc)
