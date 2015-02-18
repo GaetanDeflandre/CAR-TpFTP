@@ -31,6 +31,8 @@ struct s_cmd * new_quit(char * args);
 struct s_cmd * new_syst(char * args);
 struct s_cmd * new_port(char * args);
 struct s_cmd * new_list(char * args);
+struct s_cmd * new_retr(char * args);
+struct s_cmd * new_stor(char * args);
 
 /* HANDLERS DES COMMANDES */
 void process_user(struct s_cmd * cmd);
@@ -39,6 +41,8 @@ void process_quit(struct s_cmd * cmd);
 void process_syst(struct s_cmd * cmd);
 void process_port(struct s_cmd * cmd);
 void process_list(struct s_cmd * cmd);
+void process_retr(struct s_cmd * cmd);
+void process_stor(struct s_cmd * cmd);
 
 void not_implemented_command(struct s_client * client);
 
@@ -95,6 +99,14 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	{
 		cmd = new_list(request_args);
 	}
+	else if (strncasecmp(request_code, CODE_RETR, strlen(request_code)) == 0)
+	{
+		cmd = new_retr(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_STOR, strlen(request_code)) == 0)
+	{
+		cmd = new_stor(request_args);
+	}
 	else
 	{
 	    not_implemented_command(client);
@@ -134,8 +146,6 @@ struct s_cmd * new_user(char * args)
 {
 	struct s_cmd * cmd;
 	char * request_args = NULL;
-	
-	printf("new_user\n");
 	
 	cmd = malloc(sizeof(struct s_cmd));
 	if (cmd == NULL)
@@ -272,6 +282,55 @@ struct s_cmd * new_list(char * args)
     return cmd;
 }
 
+struct s_cmd * new_retr(char * args)
+{
+	struct s_cmd * cmd;
+	char * request_args = NULL;
+	
+	cmd = malloc(sizeof(struct s_cmd));
+	if (cmd == NULL)
+	{
+		fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+		return NULL;
+	}
+	
+	if (args != NULL)
+	{
+		request_args = malloc((strlen(args) + 1) * sizeof(char));
+		strcpy(request_args, args);
+	}
+		
+	cmd->cmd_t = CMD_RETR;
+	cmd->cmd_h = process_retr;
+	cmd->cmd_args_field = request_args;
+	
+	return cmd;
+}
+
+struct s_cmd * new_stor(char * args)
+{
+	struct s_cmd * cmd;
+	char * request_args = NULL;
+	
+	cmd = malloc(sizeof(struct s_cmd));
+	if (cmd == NULL)
+	{
+		fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+		return NULL;
+	}
+	
+	if (args != NULL)
+	{
+		request_args = malloc((strlen(args) + 1) * sizeof(char));
+		strcpy(request_args, args);
+	}
+		
+	cmd->cmd_t = CMD_STOR;
+	cmd->cmd_h = process_stor;
+	cmd->cmd_args_field = request_args;
+	
+	return cmd;
+}
 
 /* HANDLERS DES COMMANDES */
 
@@ -567,6 +626,16 @@ void process_list(struct s_cmd * cmd)
     }
 
     return;
+}
+
+void process_retr(struct s_cmd * cmd)
+{
+	
+}
+
+void process_stor(struct s_cmd * cmd)
+{
+	
 }
 
 void destroy_cmd(struct s_cmd * cmd)
