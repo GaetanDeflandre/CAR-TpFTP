@@ -110,13 +110,13 @@ struct s_cmd * new_quit(char * args)
 
 struct s_cmd * new_list(char * args)
 {
-    /*struct s_cmd * cmd;
-      char * request_args;
+    struct s_cmd * cmd;
+    /*char * request_args;*/
 
     printf("new_list\n");
-    cmd = malloc(sizeof(struct s_cmd));*/
-    
-
+    cmd = malloc(sizeof(struct s_cmd));
+        
+    return cmd;
 }
 
 
