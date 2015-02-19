@@ -63,7 +63,19 @@ Le contenu détaillé des différents répertoires est décrit ci-dessous:
  - etc : fichier de configuration de la documentation et la base de
    données
 
-### Documentation
+
+## Utilisation
+
+### Compilation
+
+    $ make
+
+### Exécution
+
+    $ ./bin/servFTP
+
+
+## Documentation
 
 Pour ouvrir la documentation un script `./opendoc.sh` existe, il ouvre
 index.html du répertoire doc.
