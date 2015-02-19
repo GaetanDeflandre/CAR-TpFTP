@@ -33,11 +33,11 @@ ETCDIR	= etc
 DOCDIR	= doc  
 
 SOURCES	 = servFTP.c clientHandler.c command.c database.c dtp.c communication.c
-TESTS 	 = testServFTP.c testDatabase.c
-BINARIES = servFTP testServFTP testDatabase 
+TESTS 	 = testDatabase.c
+BINARIES = servFTP testDatabase 
 HEADERS  = ${SOURCE:.c=.h}
 OBJECTS  = ${SOURCE:.c=.o}
-#OBJECTS += ${TESTS:.c=.o}
+
 
 SRCPATHS = ${addprefix $(SRCDIR)/, $(SOURCES)}
 INCPATHS = ${addprefix $(INCDIR)/, $(HEADERS)}
@@ -58,9 +58,6 @@ all: $(BINPATHS) $(OBJPATHS) $(RESSOURCES)
 ### Make binaries
 ###------------------------------------------------------------
 bin/servFTP: obj/servFTP.o obj/clientHandler.o obj/command.o obj/database.o obj/dtp.o obj/communication.o | $(BINDIR)
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-bin/testServFTP: obj/testServFTP.o | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 bin/testDatabase: \
@@ -85,7 +82,6 @@ obj/communication.o:		src/communication.c include/communication.h
 obj/database.o:		src/database.c include/database.h
 obj/dtp.o:		src/dtp.c include/dtp.h
 
-obj/testServFTP.o:	test/testServFTP.c src/servFTP.c include/servFTP.h
 obj/testDatabase.o:	test/testDatabase.c src/database.c include/database.h
 
 
