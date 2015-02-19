@@ -72,11 +72,60 @@ Les graphes des dépandances, graphes des inclusion, et schémas des
 structure sont disponible dans la documentation.
 
 
+## Gestion des erreurs
+
+La valeur de retour des fonction est systématiquement vérifier,
+variable errno affiché.
+
 
 ## Codes intéressants
 
 ### Serveur multi processus
 
+Les processus sont obtenus avec la fonction `fork()`, le père attends
+de nouveaux clients. Les processus zombies sont géré.
+
+    if(init_sigaction(&action) == -1){
+	fprintf(stderr, "Erreur: lors de l'initialisation du handler wait_child.\n");
+	return -1;
+    }
+
+    if(sigaction(SIGCHLD, &action, NULL) == -1){
+	perror("Erreur signaction: ");
+	return -1;
+    }
+    
+    while(1){
+
+		clientfd = accept(listenfd, (struct sockaddr *) &cli_addr, &sock_len);
+		if(clientfd == -1){
+			perror("Erreur accept: ");
+			return -1;
+		}
+
+		printf("Nouveau client\n");
+		   
+		cpid = fork();
+		switch (cpid)
+		{
+			case -1: /* Erreur */
+			perror("Erreur fork: ");
+			return -1;
+
+			case 0: /* Fils */
+			handle_client(cli_addr, clientfd);
+			close(clientfd);
+		
+			return 0;
+			break;
+		
+			default: /* Père */
+				close(clientfd);
+		}
+    }
+    
+    close(clientfd);	
+    close(listenfd);
 
 
 ### Gestionnaire du client
@@ -167,6 +216,9 @@ structure sont disponible dans la documentation.
 
 ### Commande générique
 
+La fonction des commandes est changé dans une variable afin de
+généraliser les commandes
+
     /**
      * @struct s_cmd
      * Structure de la commande d'un client.
@@ -194,171 +246,159 @@ structure sont disponible dans la documentation.
 
 ### Commande FILE
 
+La commande liste renvoie duffèrente réponses au client, selon divers
+paramètre.
+
     void process_list(struct s_cmd * cmd)
     {
-        DIR *pDir;
-        struct dirent *pDirent;
-        char buf[BUF_SIZE + 1];
-        char bufData[BUF_SIZE + 1];
-        char path[PATHNAME_MAXLEN];
-        int status = 0;
-        struct s_client * client;
-        struct s_data_connection * c_data_connect;
-    
+        ...
+
         client = cmd->cmd_client;
-    
+
         if(client == NULL){
-	        fprintf(stderr, "Erreur: client faut null.\n");
-	        status = -1;
+            fprintf(stderr, "Erreur: client faut null.\n");
+            status = -1;
         }
 
         /* ARGUMENT */
         if(strcpy(path, client->cli_current_path) == NULL){
-	        perror("Erreur strcpy: ");
-	        status = -1;
+            perror("Erreur strcpy: ");
+            status = -1;
         }
         if(cmd->cmd_args_field != NULL){
-	        if(strcat(path, "/") == NULL){
-	            perror("Erreur strcat: ");
-	            status = -1;
-	        }
-	        if(strcat(path, cmd->cmd_args_field) == NULL){
-	            perror("Erreur strcat: ");
-	            status = -1;
-	        }
+            if(strcat(path, "/") == NULL){
+                perror("Erreur strcat: ");
+                status = -1;
+            }
+            if(strcat(path, cmd->cmd_args_field) == NULL){
+                perror("Erreur strcat: ");
+                status = -1;
+            }
         }
 
         /* OPEN DIR */
         if(status>=0){
-	        pDir = opendir(path);
-	        if (pDir == NULL) {
-	            perror("Erreur opendir: ");
-	            status = -2;
-	        }
+            pDir = opendir(path);
+            if (pDir == NULL) {
+                perror("Erreur opendir: ");
+                status = -2;
+            }
         }
 
         /* GET FOLDER CHILDREN  */
         if(status>=0){
-	        if((pDirent = readdir(pDir)) != NULL){
+            if((pDirent = readdir(pDir)) != NULL){
 
-	            if(strncpy(bufData, pDirent->d_name, BUF_SIZE) == NULL){
-		            perror("Erreur strncpy: ");
-		            status = -1;
-	            }
+                if(strncpy(bufData, pDirent->d_name, BUF_SIZE) == NULL){
+                    perror("Erreur strncpy: ");
+                    status = -1;
+                }
 
-	            if(strcat(bufData, "  ")== NULL){
-		            perror("Erreur strcat: ");
-		            status = -1;
-	            }
-	
-	            while ((pDirent = readdir(pDir)) != NULL) {
-		        if(strcat(bufData, pDirent->d_name)== NULL){
-		            perror("Erreur strcat: ");
-		            status = -1;
-		            break;
-		        }
-		        if(strcat(bufData, "  ")== NULL){
-		            perror("Erreur strcat: ");
-		            status = -1;
-		            break;
-		        }
-	        }
+                if(strcat(bufData, "  ")== NULL){
+                    perror("Erreur strcat: ");
+                    status = -1;
+                }
 
-	        strcat(bufData, "\r\n");
+                while ((pDirent = readdir(pDir)) != NULL) {
+                    /* Recherche dossiers et fichiers */
+                    ...
+                }
 
-        } else {
-	        bufData[0] = '\0';
-	    }
+                strcat(bufData, "\r\n");
+
+            } else {
+                bufData[0] = '\0';
+            }
+        }
+
+        if(status>=0){
+
+            /* SEND LIST*/
+            c_data_connect = client->cli_data_connection;
+            if(c_data_connect == NULL){
+                fprintf(stderr, "Erreur: champ cli_data_connection null.\n");
+                status = -1;
+            }
+
+            if(c_data_connect->dc_transfer_t == DT_ACTIVE){
+
+                if (!is_data_connection_opened(c_data_connect)){
+
+                    if(open_data_connection(c_data_connect) == -1){
+                        fprintf(stderr, "Erreur: Ouverture connection data.\n");
+                        status = -3;
+                    }
+
+                    /* File status okay; about to open data connection. */
+                    snprintf(buf, BUF_SIZE, "150 File status okay; about to open data connection.\r\n");
+
+                    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                        perror("Erreur write: ");
+                        return;
+                    }
+                } else {
+                /* Data connection already open; transfer starting. */
+                snprintf(buf, BUF_SIZE, "125 Data connection already open; transfer starting.\r\n");
+
+                if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                    perror("Erreur write: ");
+                    return;
+                }
+            }
+
+            write_data(bufData, c_data_connect);
+            printf("--- buf envoyé: %s\n", bufData);
+
+            if(close_data_connection(c_data_connect) == -1){
+                fprintf(stderr, "Erreur: Fermeture connection data.\n");
+                status = -1;
+            }
+
+            /* Closing data connection. */
+            snprintf(buf, BUF_SIZE, "226 Closing data connection.\r\n");
+
+            if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                perror("Erreur write: ");
+                return;
+            }
+            return;
+
+            } else {
+                /* Command not implemented for that parameter. */
+                snprintf(buf, BUF_SIZE, "504 Command not implemented for that parameter.\r\n");
+
+                if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                    perror("Erreur write: ");
+                    status = -1;
+                }
+            }
+        }
+
+        if(status == -1){
+            /* Requested action aborted: local error in processing. */
+            snprintf(buf, BUF_SIZE, "451 Requested action aborted: local error in processing.\r\n");
+
+            if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                perror("Erreur write: ");
+                return;
+            }
+        } else if(status == -2){
+            /* Syntax error in parameters or arguments. */
+            snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
+
+            if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                perror("Erreur write: ");
+                return;
+            }
+        } else if(status == -3){
+            /* Can't open data connection. */
+            snprintf(buf, BUF_SIZE, "425 Can\'t open data connection.\r\n");
+
+            if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
+                perror("Erreur write: ");
+                return;
+            }
+        }
+
+        return;
     }
-
-    if(status>=0){
-
-	    /* SEND LIST*/
-	    c_data_connect = client->cli_data_connection;
-	    if(c_data_connect == NULL){
-	        fprintf(stderr, "Erreur: champ cli_data_connection null.\n");
-	        status = -1;
-	    }
-
-	    if(c_data_connect->dc_transfer_t == DT_ACTIVE){
-		
-	        if (!is_data_connection_opened(c_data_connect)){
-		
-		        if(open_data_connection(c_data_connect) == -1){
-		            fprintf(stderr, "Erreur: Ouverture connection data.\n");
-		            status = -3;
-		        }
-
-		        /* File status okay; about to open data connection. */
-		        snprintf(buf, BUF_SIZE, "150 File status okay; about to open data connection.\r\n");
-	
-		        if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-		            perror("Erreur write: ");
-		            return;
-		        }
-	        } else {
-		    /* Data connection already open; transfer starting. */
-		    snprintf(buf, BUF_SIZE, "125 Data connection already open; transfer starting.\r\n");
-	
-		    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-		        perror("Erreur write: ");
-		        return;
-		    }
-	    }
-
-	    write_data(bufData, c_data_connect);
-	    printf("--- buf envoyé: %s\n", bufData);
-
-	    if(close_data_connection(c_data_connect) == -1){
-		    fprintf(stderr, "Erreur: Fermeture connection data.\n");
-		    status = -1;
-	    }
-
-	    /* Closing data connection. */
-	    snprintf(buf, BUF_SIZE, "226 Closing data connection.\r\n");
-
-	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-		    perror("Erreur write: ");
-		    return;
-	    }
-	    return;
-
-	} else {
-	    /* Command not implemented for that parameter. */
-	    snprintf(buf, BUF_SIZE, "504 Command not implemented for that parameter.\r\n");
-	
-	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-		    perror("Erreur write: ");
-		    status = -1;
-	    }
-	}
-    }
-
-    if(status == -1){
-	    /* Requested action aborted: local error in processing. */
-	    snprintf(buf, BUF_SIZE, "451 Requested action aborted: local error in processing.\r\n");
-
-	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	        perror("Erreur write: ");
-	        return;
-	    }
-    } else if(status == -2){
-	    /* Syntax error in parameters or arguments. */
-	    snprintf(buf, BUF_SIZE, "501 Syntax error in parameters or arguments.\r\n");
-
-	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	        perror("Erreur write: ");
-	        return;
-	    }
-    } else if(status == -3){
-	    /* Can't open data connection. */
-	    snprintf(buf, BUF_SIZE, "425 Can\'t open data connection.\r\n");
-
-	    if(write(cmd->cmd_client->cli_sock, buf, strlen(buf)) == -1){
-	        perror("Erreur write: ");
-	        return;
-	    }
-    }
-
-    return;
-}

@@ -543,7 +543,7 @@ void process_list(struct s_cmd * cmd)
 		perror("Erreur strncpy: ");
 		status = -1;
 	    }
-
+	    
 	    if(strcat(bufData, "  ")== NULL){
 		perror("Erreur strcat: ");
 		status = -1;
