@@ -244,7 +244,7 @@ mémoire. Cela permet au clientHandler de s'abstraire des commandes.
     };
 
 
-### Commande FILE
+### Commande LIST
 
 La commande liste renvoie différentes réponses au client, selon divers
 paramètres.
