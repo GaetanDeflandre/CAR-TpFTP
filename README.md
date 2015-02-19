@@ -16,7 +16,7 @@ protocoles TCP/IP et FTP pour le transfert de fichiers.
 
 ## Dépendance
 
-Pour compiler le project la bibliothèque *libxml2* est nécessaire.
+Pour compiler le projet la bibliothèque *libxml2* est nécessaire.
 
     $ apt_get install libxml2
 
@@ -54,27 +54,27 @@ Le projet est agencé de la manière suivante:
      |-  README.md
      `-  opendoc.sh
 
-Le contenu détailler des diffèrents répertoire est décrit ci-dessous:
+Le contenu détaillé des différents répertoires est décrit ci-dessous:
 
  - src : les fichiers sources (.c)
- - include : les fichier d'en-tête (.h)
- - test : répertoire de teste
+ - include : les fichiers d'en-tête (.h)
+ - test : répertoire de test
  - doc : répertoire de documentation
  - etc : fichier de configuration de la documentation et la base de
    données
 
 ### Documentation
 
-Pour ouvrir la documentation un script `./opendoc.sh` exsiste, il
-ouvre index.html du répertoire doc.
+Pour ouvrir la documentation un script `./opendoc.sh` existe, il ouvre
+index.html du répertoire doc.
 
-Les graphes des dépandances, graphes des inclusion, et schémas des
-structure sont disponible dans la documentation.
+Les graphes des dépendances, graphes des inclusions, et schémas des
+structures sont disponibles dans la documentation.
 
 
 ## Gestion des erreurs
 
-La valeur de retour des fonction est systématiquement vérifier,
+La valeur de retour des fonctions est systématiquement vérifiée,
 variable errno affiché.
 
 
@@ -82,17 +82,17 @@ variable errno affiché.
 
 ### Serveur multi processus
 
-Les processus sont obtenus avec la fonction `fork()`, le père attends
-de nouveaux clients. Les processus zombies sont géré.
+Les processus sont obtenus avec la fonction `fork()`, le père attend
+de nouveaux clients. Les processus zombies sont gérés.
 
     if(init_sigaction(&action) == -1){
-	fprintf(stderr, "Erreur: lors de l'initialisation du handler wait_child.\n");
-	return -1;
+	    fprintf(stderr, "Erreur: lors de l'initialisation du handler wait_child.\n");
+	    return -1;
     }
 
     if(sigaction(SIGCHLD, &action, NULL) == -1){
-	perror("Erreur signaction: ");
-	return -1;
+	    perror("Erreur signaction: ");
+	    return -1;
     }
     
     while(1){
@@ -120,7 +120,7 @@ de nouveaux clients. Les processus zombies sont géré.
 			break;
 		
 			default: /* Père */
-				close(clientfd);
+			close(clientfd);
 		}
     }
     
@@ -216,8 +216,8 @@ de nouveaux clients. Les processus zombies sont géré.
 
 ### Commande générique
 
-La fonction des commandes est changé dans une variable afin de
-généraliser les commandes
+Pour les commandes, la fonction associée à la commande est conservé en
+mémoire. Cela permet au clientHandler de s'abstraire des commandes.
 
     /**
      * @struct s_cmd
@@ -246,8 +246,8 @@ généraliser les commandes
 
 ### Commande FILE
 
-La commande liste renvoie duffèrente réponses au client, selon divers
-paramètre.
+La commande liste renvoie différentes réponses au client, selon divers
+paramètres.
 
     void process_list(struct s_cmd * cmd)
     {
