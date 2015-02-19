@@ -4,6 +4,11 @@
 #include <sys/types.h>
 
 /**
+ * @file communication.h
+ * @brief Fonction de communication.
+ */
+
+/**
  * Ecrit le ocntenu d'un buffer dans le socket du client.
  *
  * @param[in] socket Le socket du client.

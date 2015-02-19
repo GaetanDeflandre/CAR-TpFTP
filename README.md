@@ -25,34 +25,34 @@ Pour compiler le project la bibliothèque *libxml2* est nécessaire.
 
 Le projet est agencé de la manière suivante:
 
-[-] .  
- |-[-] doc  
- |-[-] etc  
- |  |-  database.xml  
- |  `-  doxygen.ini  
- |-[-] files  
- |  |-[+] test  
- |  `-[+] toto  
- |-[-] include  
- |  |-  clientHandler.h  
- |  |-  command.h  
- |  |-  communication.h  
- |  |-  database.h  
- |  |-  dtp.h  
- |  `-  servFTP.h  
- |-[-] src  
- |  |-  clientHandler.c  
- |  |-  command.c  
- |  |-  communication.c  
- |  |-  database.c  
- |  |-  dtp.c  
- |  `-  servFTP.c  
- |-[-] test  
- |  |-  testDatabase.c  
- |  `-  testServFTP.c  
- |-  Makefile  
- |-  README.md  
- `-  opendoc.sh  
+    [-] .
+	 |-[+] doc
+     |-[-] etc
+     |  |-  database.xml
+     |  `-  doxygen.ini
+     |-[-] files
+     |  |-[+] test
+     |  `-[+] toto
+     |-[-] include
+     |  |-  clientHandler.h
+     |  |-  command.h
+     |  |-  communication.h
+     |  |-  database.h
+     |  |-  dtp.h
+     |  `-  servFTP.h
+     |-[-] src
+     |  |-  clientHandler.c
+     |  |-  command.c
+     |  |-  communication.c
+     |  |-  database.c
+     |  |-  dtp.c
+     |  `-  servFTP.c
+     |-[-] test
+     |  |-  testDatabase.c
+     |  `-  testServFTP.c
+     |-  Makefile
+     |-  README.md
+     `-  opendoc.sh
 
 Le contenu détailler des diffèrents répertoire est décrit ci-dessous:
 
@@ -60,17 +60,30 @@ Le contenu détailler des diffèrents répertoire est décrit ci-dessous:
  - include : les fichier d'en-tête (.h)
  - test : répertoire de teste
  - doc : répertoire de documentation
- - etc : fichier de configuration de la documentation et la base de données
+ - etc : fichier de configuration de la documentation et la base de
+   données
+
+### Documentation
+
+Pour ouvrir la documentation un script `./opendoc.sh` exsiste, il
+ouvre index.html du répertoire doc.
+
+Les graphes des dépandances, graphes des inclusion, et schémas des
+structure sont disponible dans la documentation.
+
 
 
 ## Codes intéressants
 
-### Handler client
+### Serveur multi processus
+
+
+
+### Gestionnaire du client
 
     /* Boucle de traitement de requetes. Une requete par tour. */
 	while(1)
 	    {
-		    printf("u= %s\np= %s\n", client.cli_username, client.cli_current_path);
 		
 		    /* Lecture requete */
 		    req_size = read_client_request(client.cli_sock, &request);
@@ -152,9 +165,34 @@ Le contenu détailler des diffèrents répertoire est décrit ci-dessous:
 		    return;
 	    }
 
+### Commande générique
+
+    /**
+     * @struct s_cmd
+     * Structure de la commande d'un client.
+     */
+    struct s_cmd;
+
+    /**
+     * Type de la fonction handler commande.
+     */
+    typedef void (cmd_handler)(struct s_cmd *);
+
+
+    struct s_cmd
+    {
+        /** Fonction à appeler */
+        cmd_handler * cmd_h;
+        /** Arguments de la commande */
+        char * cmd_args_field;
+        /** Type de la commande */
+        enum cmd_type cmd_t;
+        /** Client à l'origine de la commande */
+        struct s_client * cmd_client;
+    };
+
 
 ### Commande FILE
-
 
     void process_list(struct s_cmd * cmd)
     {

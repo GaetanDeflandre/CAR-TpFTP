@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sensible-browser doc/index.html
+sensible-browser doc/index.html &
