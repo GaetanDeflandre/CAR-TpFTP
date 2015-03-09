@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 
 int needing_login_cmd(struct s_cmd * cmd);
 ssize_t read_client_request(int sockfd, char **request);
@@ -127,6 +128,44 @@ int needing_login_cmd(struct s_cmd * cmd)
 	}
 	
 	return 0;
+}
+
+int is_valid_path(struct s_client * client, const char* path){
+    
+    struct stat statbuf;
+    char* substr;
+    char pathcpy[PATHNAME_MAXLEN+1];
+
+    substr = strstr(path, client->cli_root_path);
+
+    /* faux si pas de substr ou ne commence pas par la racine */
+    if(substr == NULL || substr != path){
+	return 0;
+    } else {
+	if(stat(path, &statbuf) == -1){
+	    perror("Erreur stat");
+	    return 0;
+	}
+	if(S_ISDIR(statbuf.st_mode) || S_ISREG(statbuf.st_mode)){
+	    substr = strstr(path, "..");
+	    if(substr == NULL){
+		return 1;
+	    } else { /* Gestion du cas avec .. */
+		if(strncpy(pathcpy, path, PATHNAME_MAXLEN) == NULL){
+		    perror("Erreur strncpy");
+		    return 0;
+		}
+		pathcpy[(substr-path)-1] = '\0';
+		if(strcmp(pathcpy, client->cli_root_path) != 0){
+		    return 1;
+		} else {
+		    return 0;
+		}
+	    }
+	}
+    }
+    
+    return 0;
 }
 
 ssize_t read_client_request(int sockfd, char **request)

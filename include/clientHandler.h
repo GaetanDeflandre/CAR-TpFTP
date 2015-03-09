@@ -18,10 +18,12 @@
  */
 struct s_client
 {
-	/** Nom de l'utilisateur, si connecté. */
-	char * cli_username;
-	/** Vaut 1 si le client est authentifié, 0 sinon. */
-	int cli_logged_in;
+    /** Nom de l'utilisateur, si connecté. */
+    char * cli_username;
+    /** Vaut 1 si le client est authentifié, 0 sinon. */
+    int cli_logged_in;
+    /** Chemin de la racine du client */
+    char cli_root_path[PATHNAME_MAXLEN];
     /** Chemin courant du client */
     char cli_current_path[PATHNAME_MAXLEN];
     /** Socket du client */
@@ -32,7 +34,13 @@ struct s_client
     struct s_data_connection * cli_data_connection;
 };
 
-/** 
+/**
+ * Retourne vrai si le chemin \a path est un fichier ou répertoire du
+ * client \a client.
+ */
+int is_valid_path(struct s_client * client, const char* path);
+
+/**
  * Interprète les requêtes d'un client et exécute les commandes 
  * appropriées jusqu'à la fin de la connexion. 
  */
