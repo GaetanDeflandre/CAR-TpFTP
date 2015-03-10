@@ -16,7 +16,7 @@
 /** Les types des commandes */
 enum cmd_type {CMD_USER, CMD_PASS, CMD_SYST, CMD_PORT, CMD_LIST, 
 	       CMD_RETR, CMD_STOR, CMD_QUIT, CMD_PASV, CMD_PWD, 
-	       CMD_CWD, CMD_DELE, CMD_CDUP, CMD_MKD, CMD_RMD};
+	       CMD_CWD, CMD_DELE, CMD_CDUP, CMD_MKD, CMD_RMD, CMD_FEAT};
 /**
  * @struct s_cmd
  * Structure de la commande d'un client.
