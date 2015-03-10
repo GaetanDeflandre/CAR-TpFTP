@@ -566,12 +566,13 @@ void process_list(struct s_cmd * cmd)
     int child_status;
     struct s_client * client;
     struct s_data_connection * dc;
+    struct stat stat_buf;
     
     client = cmd->cmd_client;
     dc = client->cli_data_connection;
 
     if(client == NULL){
-        fprintf(stderr, "Erreur: client faut null.\n");
+        fprintf(stderr, "Erreur: client vaut null.\n");
         status = -1;
     }
 
@@ -591,11 +592,17 @@ void process_list(struct s_cmd * cmd)
 			status = -1;
 		}
     }
-
-	struct stat stat_buf;
-	if (lstat(path, &stat_buf)==-1)
+    
+    if (status >= 0 && is_valid_path(client, path))
+    {
+		if (lstat(path, &stat_buf)==-1)
+		{
+			perror("Erreur process_list (stat)");
+			status = -2;
+		}
+	}
+	else
 	{
-		perror("Erreur process_list (stat)");
 		status = -2;
 	}
 
@@ -817,49 +824,76 @@ void process_retr(struct s_cmd * cmd)
     int sock_user_PI;
     char path[PATHNAME_MAXLEN];
     ssize_t ret;
-        
-    /* ARGUMENT */
-    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
-        perror("Erreur strcpy: ");
-    }
-    if(cmd->cmd_args_field != NULL){
-        if(strcat(path, "/") == NULL){
-            perror("Erreur strcat: ");
-        }
-        if(strcat(path, cmd->cmd_args_field) == NULL){
-            perror("Erreur strcat: ");
-        }
-    }
-        
+    
     sock_user_PI = cmd->cmd_client->cli_sock;
-    dc = cmd->cmd_client->cli_data_connection;
-    if (!is_data_connection_opened(dc)) {
+    
+    /* ARGUMENT */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL)
+    {
+        perror("Erreur strcpy");
+        write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+		return;
+    }
+    
+    if(cmd->cmd_args_field != NULL){
+        if(strcat(path, "/") == NULL)
+        {
+            perror("Erreur strcat");
+            write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+			return;
+        }
+        
+        if(strcat(path, cmd->cmd_args_field) == NULL)
+        {
+            perror("Erreur strcat");
+            write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+			return;
+        }
+    }
+    
+    if (is_valid_path(cmd->cmd_client, path))
+    {
+		dc = cmd->cmd_client->cli_data_connection;
+		if (!is_data_connection_opened(dc))
+		{
 
-	write_socket(sock_user_PI, "150 About to open data connection.\r\n");
-	if (open_data_connection(dc) < 0) {
-	    write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
-	    fprintf(stderr, "Erreur process_retr (open_data).\n");
-	    return;
+			write_socket(sock_user_PI, "150 About to open data connection.\r\n");
+			if (open_data_connection(dc) < 0)
+			{
+				write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
+				fprintf(stderr, "Erreur process_retr (open_data).\n");
+				return;
+			}
+
+		}
+		else
+		{
+			write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
+		}
+			
+			
+		ret = send_file(path, dc);
+			
+		if (ret == -2)
+		{
+			write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
+			return;
+		}
+		else if (ret < 0)
+		{
+			close_data_connection(dc);
+			write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
+			return;
+		}
+			
+		write_socket(sock_user_PI, "226 Closing data connection.\r\n");
+		close_data_connection(dc);
 	}
-
-    } else {
-	write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
-    }
-        
-        
-    ret = send_file(path, dc);
-        
-    if (ret == -2) {
-	write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
-	return;
-    } else if (ret < 0) {
-	close_data_connection(dc);
-	write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
-	return;
-    }
-        
-    write_socket(sock_user_PI, "226 Closing data connection.\r\n");
-    close_data_connection(dc);
+	else
+	{
+		write_socket(sock_user_PI, "550 Requested file action not taken (no access).\r\n");
+		return;
+	}
         
     return;
 }
@@ -869,55 +903,85 @@ void process_stor(struct s_cmd * cmd)
     struct s_data_connection * dc;
     int sock_user_PI;
     char path[PATHNAME_MAXLEN];
+    char path_control[PATHNAME_MAXLEN];
+    char * p_control;
     ssize_t ret;
+    
+    sock_user_PI = cmd->cmd_client->cli_sock;
         
     /* ARGUMENT */
     if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
         perror("Erreur strcpy: ");
+        write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+		return;
     }
     if(cmd->cmd_args_field != NULL){
         if(strcat(path, "/") == NULL){
             perror("Erreur strcat: ");
+            write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+			return;
         }
+        
         if(strcat(path, cmd->cmd_args_field) == NULL){
             perror("Erreur strcat: ");
+            write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+			return;
         }
     }
-        
-    sock_user_PI = cmd->cmd_client->cli_sock;
-    dc = cmd->cmd_client->cli_data_connection;
-    if (!is_data_connection_opened(dc))
-        {
-	    write_socket(sock_user_PI, "150 About to open data connection.\r\n");
-	    if (open_data_connection(dc) < 0)
-                {
-		    write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
-		    fprintf(stderr, "Erreur process_retr (open_data).\n");
-		    return;
-                }
-        }
-    else
-        {
-	    write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
-        }
-        
-        
-    ret = read_file(path, dc);
-        
-    if (ret == -2)
-        {
-	    write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
-	    return;
-        }
-    else if (ret < 0)
-        {
-	    close_data_connection(dc);
-	    write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
-	    return;
-        }
-        
-    write_socket(sock_user_PI, "226 Closing data connection.\r\n");
-    close_data_connection(dc);
+    
+    if(strcpy(path_control, path) == NULL)
+    {
+        perror("Erreur strcpy: ");
+        write_socket(sock_user_PI, "451 Requested action aborted: local error in processing.\r\n");
+		return;
+    }
+    
+	/* Construction du chemin du répertoire qui va contenir le 
+	nouveau fichier. */
+    p_control = strrchr(path_control, '/');
+    if (p_control != NULL)
+		*p_control = '\0';
+		
+	if (is_valid_path(cmd->cmd_client, path_control))
+	{
+		dc = cmd->cmd_client->cli_data_connection;
+		if (!is_data_connection_opened(dc))
+			{
+			write_socket(sock_user_PI, "150 About to open data connection.\r\n");
+			if (open_data_connection(dc) < 0)
+					{
+				write_socket(sock_user_PI, "425 Can't open data connection.\r\n");
+				fprintf(stderr, "Erreur process_retr (open_data).\n");
+				return;
+					}
+			}
+		else
+			{
+			write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
+			}
+			
+			
+		ret = read_file(path, dc);
+			
+		if (ret == -2)
+			{
+			write_socket(sock_user_PI, "552 Requested file action aborted.\r\n");
+			return;
+			}
+		else if (ret < 0)
+			{
+			close_data_connection(dc);
+			write_socket(sock_user_PI, "426 Connection closed; transfer aborted.\r\n");
+			return;
+			}
+			
+		write_socket(sock_user_PI, "226 Closing data connection.\r\n");
+		close_data_connection(dc);
+	}
+	else
+	{
+		write_socket(sock_user_PI, "550 Requested file action not taken.\r\n");
+	}
         
     return;
 }

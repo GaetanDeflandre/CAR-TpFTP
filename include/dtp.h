@@ -112,11 +112,12 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc);
  * @param[in] dc un pointeur vers la structure de la connexion.
  * @param[in] pathname le chemin du fichier à envoyer.
  * 
- * @return le nombre d'octets lus ou en cas d'erreur :
+ * @return le nombre d'octets envoyés ou en cas d'erreur :
  * 			-1 si pas de connexion ouverte<br/>
  * 			-2 si la création échoue<br/>
  * 			-3 si problème de lecture<br/>
  * 			-4 si problème d'écriture<br/>
+ * 			-5 si autre problème<br/>
  */
 ssize_t send_file(char * pathname, struct s_data_connection * dc);
 

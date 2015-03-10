@@ -131,13 +131,13 @@ ssize_t write_data(char * message, struct s_data_connection * dc)
 ssize_t read_file(char * pathname, struct s_data_connection * dc)
 {
 	char buf[BUF_SIZE + 1];
-	int fd, nl_found;
-	char * crlf, *nl_start;
+	int fd;
+	char *cr, *str_start;
 	ssize_t ret, nb_read_chars=0;
 	
 	memset(buf, 0, BUF_SIZE + 1);
 	
-	if (dc->dc_socket < 0)
+	if (!is_data_connection_opened(dc))
 	{
 		fprintf(stderr, "Erreur read_file: Connexion données non-ouverte.\n");
 		return -1;
@@ -152,33 +152,34 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 	
 	while ((ret = read(dc->dc_socket, buf, BUF_SIZE)) != 0)
 	{
-		nl_found = 0;
-		
 		if (ret < 0)
 		{
 			perror("Erreur read_file (read): ");
+			unlink(pathname);
+			close(fd);
 			return -3;
 		}
 		
-		nl_start = buf;
-		while((crlf = strstr(nl_start, "\r\n")) != NULL && nl_start - buf < BUF_SIZE + 1)
+		str_start = buf;
+		
+		while((cr = strchr(str_start, '\r')) != NULL)
 		{
-			nl_found = 1;
-			*crlf = '\n';
-			*(crlf + 1) = '\0';
-			
-			if (write(fd, nl_start, strlen(nl_start)) < 0)
+			*cr = '\0';
+			if (strlen(str_start) > 0)
 			{
-				perror("Erreur read_file (write): ");
-				return -4;
+				if (write(fd, str_start, strlen(str_start)) < 0)
+				{
+					perror("Erreur read_file (write): ");
+					return -4;
+				}
 			}
 			
-			nl_start += strlen(nl_start) + 1;
+			str_start = cr + 1;
 		}
 		
-		if (!nl_found)
+		if (strlen(str_start) > 0)
 		{
-			if (write(fd, buf, strlen(buf)) < 0)
+			if (write(fd, str_start, strlen(str_start)) < 0)
 			{
 				perror("Erreur read_file (write): ");
 				return -4;
@@ -187,6 +188,45 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 		
 		nb_read_chars += ret;
 	}
+		
+		////////////////////////
+		//~ nl_found = 0;
+		//~ 
+		//~ if (ret < 0)
+		//~ {
+			//~ perror("Erreur read_file (read): ");
+			//~ unlink(pathname);
+			//~ close(fd);
+			//~ return -3;
+		//~ }
+		//~ 
+		//~ nl_start = buf;
+		//~ while((crlf = strstr(nl_start, "\r\n")) != NULL && nl_start - buf < BUF_SIZE + 1)
+		//~ {
+			//~ nl_found = 1;
+			//~ *crlf = '\n';
+			//~ *(crlf + 1) = '\0';
+			//~ 
+			//~ if (write(fd, nl_start, strlen(nl_start)) < 0)
+			//~ {
+				//~ perror("Erreur read_file (write): ");
+				//~ return -4;
+			//~ }
+			//~ 
+			//~ nl_start += strlen(nl_start) + 1;
+		//~ }
+		//~ 
+		//~ if (!nl_found)
+		//~ {
+			//~ if (write(fd, buf, strlen(buf)) < 0)
+			//~ {
+				//~ perror("Erreur read_file (write): ");
+				//~ return -4;
+			//~ }
+		//~ }
+		//~ 
+		//~ nb_read_chars += ret;
+	//~ }
 	
 	close(fd);
 	return nb_read_chars;
@@ -195,10 +235,14 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 ssize_t send_file(char * pathname, struct s_data_connection * dc)
 {
 	char buf[BUF_SIZE + 1];
+	char *lf, *str_start, *with_cr_str = NULL;
 	int fd;
-	ssize_t ret, nb_read_chars=0;
+	size_t new_str_size=0;
+	ssize_t ret, nb_written_chars=0;
 	
-	if (dc->dc_socket < 0)
+	memset(buf, 0, BUF_SIZE + 1);
+	
+	if (!is_data_connection_opened(dc))
 	{
 		fprintf(stderr, "Erreur send_file: Connexion données non-ouverte.\n");
 		return -1;
@@ -211,23 +255,115 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		return -2;
 	}
 	
-	while ((ret = read(fd, buf, BUF_SIZE+1)) != 0)
-	{
+	while ((ret = read(fd, buf, BUF_SIZE)) != 0)
+	{		
 		if (ret < 0)
 		{
-			perror("Erreur send_file (read): ");
+			perror("Erreur read_file (read): ");
+			close(fd);
 			return -3;
 		}
 		
-		if (write(dc->dc_socket, buf, BUF_SIZE+1) < 0)
+		str_start = buf;
+		while((lf = strchr(str_start, '\n')) != NULL)
 		{
-			perror("Erreur send_file (write): ");
-			return -4;
+			*lf = '\0';
+			if (with_cr_str == NULL)
+			{
+				// *2 pour ne pas avoir à réallouer trop souvent.
+				with_cr_str = (char*) calloc(BUF_SIZE * 2, sizeof(char));
+				new_str_size = BUF_SIZE * 2 * sizeof(char);
+				if (with_cr_str == NULL)
+				{
+					perror("Erreur send_file (calloc)");
+					close(fd);
+					return -5;
+				}
+				
+			}
+			else if (new_str_size - strlen(with_cr_str) < lf - str_start + 3) // 1 pour \r, 1 pour \n et 1 pour \0
+			{
+				with_cr_str = (char *) realloc(with_cr_str, new_str_size * 2);
+				
+				if (with_cr_str == NULL)
+				{
+					perror("Erreur send_file (realloc)");
+					close(fd);
+					return -5;
+				}
+				
+				memset(with_cr_str + new_str_size, 0, new_str_size);
+				new_str_size *= 2;
+			}
+			
+			if(strcat(with_cr_str, str_start) == NULL)
+			{
+				perror("Erreur strcpy");
+				close(fd);
+				free(with_cr_str);
+				return -5;
+			}
+			strcat(with_cr_str, "\r\n");
+			
+			str_start = lf + 1;
 		}
 		
-		nb_read_chars += ret;
+		if (with_cr_str != NULL)
+		{
+			printf("str : %s\n", with_cr_str);
+			if ((ret = write(dc->dc_socket, with_cr_str, strlen(with_cr_str))) < 0)
+			{
+				perror("Erreur send_file (write)");
+				close(fd);
+				free(with_cr_str);
+				return -4;
+			}
+			
+			/* Ecriture du bout de la chaine qui ne contient pas de \n */
+			if ((ret = write(dc->dc_socket, str_start, strlen(str_start))) < 0)
+			{
+				perror("Erreur send_file (write)");
+				close(fd);
+				free(with_cr_str);
+				return -4;
+			}
+			
+			new_str_size = 0;
+			free(with_cr_str);
+			with_cr_str = NULL;
+		}
+		else
+		{
+			if ((ret = write(dc->dc_socket, buf, strlen(buf))) < 0)
+			{
+				perror("Erreur send_file (write)");
+				close(fd);
+				return -4;
+			}
+			memset(buf, 0, BUF_SIZE + 1);
+		}
+		
+		nb_written_chars += ret;
 	}
 	
+	/////////////////////
+	//~ while ((ret = read(fd, buf, BUF_SIZE+1)) != 0)
+	//~ {
+		//~ if (ret < 0)
+		//~ {
+			//~ perror("Erreur send_file (read): ");
+			//~ return -3;
+		//~ }
+		//~ 
+		//~ if (write(dc->dc_socket, buf, BUF_SIZE+1) < 0)
+		//~ {
+			//~ perror("Erreur send_file (write): ");
+			//~ return -4;
+		//~ }
+		//~ 
+		//~ nb_read_chars += ret;
+	//~ }
+	
 	close(fd);
-	return nb_read_chars;
+	return nb_written_chars;
 }
