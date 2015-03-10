@@ -130,7 +130,7 @@ int needing_login_cmd(struct s_cmd * cmd)
 	return 0;
 }
 
-int is_valid_path(struct s_client * client, const char* path){
+unsigned is_valid_path(struct s_client * client, const char* path){
     
     struct stat statbuf;
     char* substr;
@@ -165,6 +165,72 @@ int is_valid_path(struct s_client * client, const char* path){
 	}
     }
     
+    return 0;
+}
+
+unsigned is_member_of_currentpath(struct s_client * client, const char* membername){
+    return is_file_of_currentpath(client, membername) || is_file_of_currentpath(client, membername);
+}
+
+unsigned is_file_of_currentpath(struct s_client * client, const char* filename){
+    
+    struct stat statbuf;
+    char path[PATHNAME_MAXLEN+1];
+    
+    /* ARGUMENT */
+    if(strcpy(path, client->cli_current_path) == NULL){
+	perror("Erreur strcpy");
+	return 0;
+    }
+    if(strcat(path, "/") == NULL){
+	perror("Erreur strcat");
+	return 0;
+    }
+    if(strcat(path, filename) == NULL){
+	perror("Erreur strcat");
+	return 0;
+    }
+    
+    if(stat(path, &statbuf) == -1){
+	perror("Erreur stat");
+	return 0;
+    }
+
+    if(S_ISREG(statbuf.st_mode)){
+	return 1;
+    }
+
+    return 0;
+}
+
+unsigned is_dir_of_currentpath(struct s_client * client, const char* dirname){
+    
+    struct stat statbuf;
+    char path[PATHNAME_MAXLEN+1];
+    
+    /* ARGUMENT */
+    if(strcpy(path, client->cli_current_path) == NULL){
+	perror("Erreur strcpy");
+	return 0;
+    }
+    if(strcat(path, "/") == NULL){
+	perror("Erreur strcat");
+	return 0;
+    }
+    if(strcat(path, dirname) == NULL){
+	perror("Erreur strcat");
+	return 0;
+    }
+    
+    if(stat(path, &statbuf) == -1){
+	perror("Erreur stat");
+	return 0;
+    }
+
+    if(S_ISDIR(statbuf.st_mode)){
+	return 1;
+    }
+
     return 0;
 }
 
