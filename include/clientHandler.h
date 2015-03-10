@@ -38,7 +38,25 @@ struct s_client
  * Retourne vrai si le chemin \a path est un fichier ou répertoire du
  * client \a client.
  */
-int is_valid_path(struct s_client * client, const char* path);
+unsigned is_valid_path(struct s_client * client, const char* path);
+
+/**
+ * Retourne vrai si le membre de nom \a membername est dans le
+ * répertoire courrent du client \a client.
+ */
+unsigned is_member_of_currentpath(struct s_client * client, const char* membername);
+
+/**
+ * Retourne vrai si le fichier de nom \a filename est un fichier dans
+ * le répertoire courrent du client \a client.
+ */
+unsigned is_file_of_currentpath(struct s_client * client, const char* filename);
+
+/**
+ * Retourne vrai si le répertoire de nom \a dirname est un fichier
+ * dans le répertoire courrent du client \a client.
+ */
+unsigned is_dir_of_currentpath(struct s_client * client, const char* dirname);
 
 /**
  * Interprète les requêtes d'un client et exécute les commandes 

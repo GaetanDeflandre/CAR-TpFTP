@@ -3,7 +3,6 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -20,10 +19,14 @@
 #define CODE_PASS "PASS"
 #define CODE_QUIT "QUIT"
 #define CODE_SYST "SYST"
+#define CODE_FEAT "FEAT"
 #define CODE_PORT "PORT"
 #define CODE_LIST "LIST"
 #define CODE_PWD  "PWD"
 #define CODE_CWD  "CWD"
+#define CODE_RMD  "RMD"
+#define CODE_MKD  "MKD"
+#define CODE_DELE "DELE"
 #define CODE_RETR "RETR"
 #define CODE_STOR "STOR"
 
@@ -32,10 +35,14 @@ struct s_cmd * new_user(char * args);
 struct s_cmd * new_pass(char * args);
 struct s_cmd * new_quit(char * args);
 struct s_cmd * new_syst(char * args);
+struct s_cmd * new_feat(char * args);
 struct s_cmd * new_port(char * args);
 struct s_cmd * new_list(char * args);
 struct s_cmd * new_pwd(char * args);
 struct s_cmd * new_cwd(char * args);
+struct s_cmd * new_rmd(char * args);
+struct s_cmd * new_mkd(char * args);
+struct s_cmd * new_dele(char * args);
 struct s_cmd * new_retr(char * args);
 struct s_cmd * new_stor(char * args);
 
@@ -44,10 +51,14 @@ void process_user(struct s_cmd * cmd);
 void process_pass(struct s_cmd * cmd);
 void process_quit(struct s_cmd * cmd);
 void process_syst(struct s_cmd * cmd);
+void process_feat(struct s_cmd * cmd);
 void process_port(struct s_cmd * cmd);
 void process_list(struct s_cmd * cmd);
 void process_pwd(struct s_cmd * cmd);
 void process_cwd(struct s_cmd * cmd);
+void process_rmd(struct s_cmd * cmd);
+void process_mkd(struct s_cmd * cmd);
+void process_dele(struct s_cmd * cmd);
 void process_retr(struct s_cmd * cmd);
 void process_stor(struct s_cmd * cmd);
 
@@ -98,6 +109,10 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
         {
                 cmd = new_syst(request_args);
         }
+	else if (strncasecmp(request_code, CODE_FEAT, strlen(request_code)) == 0)
+        {
+                cmd = new_feat(request_args);
+        }
         else if (strncasecmp(request_code, CODE_PORT, strlen(request_code)) == 0)
         {
                 cmd = new_port(request_args);
@@ -114,6 +129,18 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
         {
                 cmd = new_cwd(request_args);
         }
+        else if (strncasecmp(request_code, CODE_DELE, strlen(request_code)) == 0)
+        {
+                cmd = new_dele(request_args);
+        }
+	else if (strncasecmp(request_code, CODE_RMD, strlen(request_code)) == 0)
+        {
+                cmd = new_rmd(request_args);
+        }
+	else if (strncasecmp(request_code, CODE_MKD, strlen(request_code)) == 0)
+        {
+                cmd = new_mkd(request_args);
+        }
         else if (strncasecmp(request_code, CODE_RETR, strlen(request_code)) == 0)
         {
                 cmd = new_retr(request_args);
@@ -121,12 +148,11 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
         else if (strncasecmp(request_code, CODE_STOR, strlen(request_code)) == 0)
         {
                 cmd = new_stor(request_args);
-        }
-        else
-        {
-            /*not_implemented_command(client);*/
-            return NULL;
-        }
+        } 
+	else 
+	{
+	        cmd = NULL;
+	}
         
         if (cmd != NULL)
         {
@@ -249,6 +275,29 @@ struct s_cmd * new_syst(char * args)
     return cmd;
 }
 
+struct s_cmd * new_feat(char * args)
+{
+    struct s_cmd * cmd;
+    char * request_args = NULL;
+
+    cmd = malloc(sizeof(struct s_cmd));
+    if (cmd == NULL){
+        fprintf(stderr, "Erreur new_feat: Erreur d'allocation de memoire.\n");
+        return NULL;
+    }
+
+    if (args != NULL){
+        request_args = malloc((strlen(args) + 1) * sizeof(char));
+        strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_FEAT;
+    cmd->cmd_h = process_feat;
+    cmd->cmd_args_field = request_args;
+        
+    return cmd;
+}
+
 struct s_cmd * new_port(char * args)
 {
     struct s_cmd * cmd;
@@ -336,6 +385,75 @@ struct s_cmd * new_cwd(char * args)
 
     cmd->cmd_t = CMD_CWD;
     cmd->cmd_h = process_cwd;
+    cmd->cmd_args_field = request_args;
+        
+    return cmd;
+}
+
+struct s_cmd * new_dele(char * args)
+{
+    struct s_cmd * cmd;
+    char * request_args = NULL;
+
+    cmd = malloc(sizeof(struct s_cmd));
+    if (cmd == NULL){
+        fprintf(stderr, "Erreur new_dele: Erreur d'allocation de memoire.\n");
+        return NULL;
+    }
+
+    if (args != NULL){
+        request_args = malloc((strlen(args) + 1) * sizeof(char));
+        strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_DELE;
+    cmd->cmd_h = process_dele;
+    cmd->cmd_args_field = request_args;
+        
+    return cmd;
+}
+
+struct s_cmd * new_rmd(char * args)
+{
+    struct s_cmd * cmd;
+    char * request_args = NULL;
+
+    cmd = malloc(sizeof(struct s_cmd));
+    if (cmd == NULL){
+        fprintf(stderr, "Erreur new_rmd: Erreur d'allocation de memoire.\n");
+        return NULL;
+    }
+
+    if (args != NULL){
+        request_args = malloc((strlen(args) + 1) * sizeof(char));
+        strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_RMD;
+    cmd->cmd_h = process_rmd;
+    cmd->cmd_args_field = request_args;
+        
+    return cmd;
+}
+
+struct s_cmd * new_mkd(char * args)
+{
+    struct s_cmd * cmd;
+    char * request_args = NULL;
+
+    cmd = malloc(sizeof(struct s_cmd));
+    if (cmd == NULL){
+        fprintf(stderr, "Erreur new_mkd: Erreur d'allocation de memoire.\n");
+        return NULL;
+    }
+
+    if (args != NULL){
+        request_args = malloc((strlen(args) + 1) * sizeof(char));
+        strcpy(request_args, args);
+    }
+
+    cmd->cmd_t = CMD_MKD;
+    cmd->cmd_h = process_mkd;
     cmd->cmd_args_field = request_args;
         
     return cmd;
@@ -498,6 +616,12 @@ void process_syst(struct s_cmd * cmd)
     return;
 }
 
+void process_feat(struct s_cmd * cmd)
+{
+    not_implemented_command(cmd->cmd_client);
+    return;
+}
+
 void process_port(struct s_cmd * cmd)
 {
     char buf[BUF_SIZE + 1];
@@ -545,7 +669,6 @@ void process_port(struct s_cmd * cmd)
     y = atoi(addr[5]);
     port = x*256 + y;
     set_port(cmd->cmd_client->cli_data_connection, port);
-    printf("%d * 256 + %d = %d\n", x, y, port);
 
     /* Command okay. */
     snprintf(buf, BUF_SIZE, "200 Command okay.\r\n");
@@ -699,124 +822,282 @@ void process_list(struct s_cmd * cmd)
 
 void process_pwd(struct s_cmd * cmd)
 {
-    char buf[BUF_SIZE + 1];
+    char buf[PATHNAME_MAXLEN+1];
     struct s_client * client;
+    int sock_user;
 
     client = cmd->cmd_client;
+    sock_user = client->cli_sock;
 
-    if(client == NULL || client->cli_current_path == NULL){
-	snprintf(buf, BUF_SIZE, "550 Requested action not taken.");
-	if(write(client->cli_sock, buf, strlen(buf)) == -1){
-	    perror("Erreur write: ");
-	    return;
-	}
-    }
-
-    snprintf(buf, BUF_SIZE, "257 \"%s\" created.\r\n", client->cli_current_path);
-    if(write(client->cli_sock, buf, strlen(buf)) == -1){
-	perror("Erreur write: ");
+    /* ERROR CASE */
+    if(client == NULL){
+	fprintf(stderr, "Erreur: client vaut NULL.\n");
+	write_socket(sock_user, "421 Service not available, closing control connection.\r\n");
 	return;
     }
+    if( client->cli_current_path == NULL){
+	fprintf(stderr, "Erreur: le champ cli_current_path vaut NULL.\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+
+    /* NORMAL CASE */
+    snprintf(buf, BUF_SIZE, "257 \"%s\" created.\r\n", client->cli_current_path);
+    write_socket(sock_user, buf);
+    return;
 
 }
 
 void process_cwd(struct s_cmd * cmd)
 {
-    DIR *pDir;
-    struct dirent *pDirent;
-    struct stat statbuf;
-    int sock_user_PI;
+    int sock_user;
     char dirname[PATHNAME_MAXLEN+1];
     char path[PATHNAME_MAXLEN+1];
     char catpath[PATHNAME_MAXLEN+1];
-    unsigned find = 0;
     char* lastchr;
 
-
-    sock_user_PI = cmd->cmd_client->cli_sock;
+    sock_user = cmd->cmd_client->cli_sock;
   
     /* ARGUMENT */
     if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
-	write_socket(sock_user_PI, "550 Requested action not taken.\r\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
         perror("Erreur strcpy: ");
 	return;
     }
     if(strcpy(catpath, path) == NULL){
-	write_socket(sock_user_PI, "550 Requested action not taken.\r\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
         perror("Erreur strcpy: ");
 	return;
     }
     if(strcpy(dirname, cmd->cmd_args_field) == NULL){
-	write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
+	write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
         perror("Erreur strcpy: ");
 	return;
     }
     if(strcat(catpath, "/") == NULL){
-	write_socket(sock_user_PI, "550 Requested action not taken.\r\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
 	perror("Erreur strcat: ");
 	return;
     }
     if(strcat(catpath, dirname) == NULL){
-	write_socket(sock_user_PI, "550 Requested action not taken.\r\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
 	perror("Erreur strcat: ");
 	return;
     }
 
-
-    /* OPEN DIR */
-    pDir = opendir(path);
-    if (pDir == NULL) {
-	write_socket(sock_user_PI, "550 Requested action not taken.\r\n");
-	perror("Erreur opendir: ");
+    if(!is_dir_of_currentpath(cmd->cmd_client, dirname)){
+	write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
 	return;
     }
 
-
-    /* GET FOLDER CHILDREN  */
-    while((pDirent = readdir(pDir)) != NULL){
-
-	if(strcmp(dirname, pDirent->d_name) == 0){
-	    find = 1;
-	    break;
-	}
-    }
-
-    if(!find){
-	write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
+    /* . CASE */
+    if(strcmp(dirname, ".") == 0){
+	write_socket(sock_user, "250 Requested file action okay, completed.\r\n");
 	return;
-    }
+    } 
 
-    stat(catpath, &statbuf);
-
-    if(S_ISDIR(statbuf.st_mode)){
-
-	if(strcmp(dirname, ".") == 0){
-	    write_socket(sock_user_PI, "250 Requested file action okay, completed.\r\n");
+    /* .. CASE */
+    if (strcmp(dirname, "..") == 0) {
+	if(strcmp(path, cmd->cmd_client->cli_root_path) == 0){
+	    write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
 	    return;
-	} else if (strcmp(dirname, "..") == 0) {
-	    if(strcmp(path, cmd->cmd_client->cli_root_path) == 0){
-		write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
-		return;
-	    } else {
-		lastchr = strrchr(path, '/');
-		int id = lastchr-path;
-		path[id] = '\0';
-		strcpy(cmd->cmd_client->cli_current_path, path);
-		write_socket(sock_user_PI, "250 Requested file action okay, completed.\r\n");
-		return;
-	    }
-	} else {
-	    strcpy(cmd->cmd_client->cli_current_path, catpath);
-	    write_socket(sock_user_PI, "250 Requested file action okay, completed.\r\n");
-	    return;
-	}
+	} 
 
-    } else {
-	write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
+	lastchr = strrchr(path, '/');
+	int id = lastchr-path;
+	path[id] = '\0';
+	strcpy(cmd->cmd_client->cli_current_path, path);
+	write_socket(sock_user, "250 Requested file action okay, completed.\r\n");
 	return;
-    }   
+    } 
+
+    /* NORMAL CASE */
+    strcpy(cmd->cmd_client->cli_current_path, catpath);
+    write_socket(sock_user, "250 Requested file action okay, completed.\r\n");
+    return;
+  
+
 }
 
+void process_dele(struct s_cmd * cmd)
+{
+    int sock_user;
+    char filename[PATHNAME_MAXLEN+1];
+    char path[PATHNAME_MAXLEN+1];
+    char catpath[PATHNAME_MAXLEN+1];
+
+    sock_user = cmd->cmd_client->cli_sock;
+  
+    /* ARGUMENT */
+    if(strcpy(filename, cmd->cmd_args_field) == NULL){
+	write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CPY */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CREATE CONCAT PATH */
+    if(strcpy(catpath, path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+    if(strcat(catpath, "/") == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+    if(strcat(catpath, filename) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+
+    /* IS FILE OF CURRENT PATH CHECKING */
+    if(!is_file_of_currentpath(cmd->cmd_client, filename)){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	fprintf(stderr, "Erreur is_file_of_currentpath: %s inexistant dans le répertoire courant.\n", filename);
+	return;
+    }
+
+    /* DELETE FILE */
+    if(unlink(catpath) == -1){
+	perror("Erreur remove");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+    /* ALL IS OK, FILE DELETED */
+    printf("File %s was deleted.\n", filename);
+    write_socket(sock_user, "250 Requested file action okay, completed.\r\n");
+    return;
+}
+
+void process_rmd(struct s_cmd * cmd)
+{
+    int sock_user;
+    char dirname[PATHNAME_MAXLEN+1];
+    char path[PATHNAME_MAXLEN+1];
+    char catpath[PATHNAME_MAXLEN+1];
+
+    sock_user = cmd->cmd_client->cli_sock;
+  
+    /* ARGUMENT */
+    if(strcpy(dirname, cmd->cmd_args_field) == NULL){
+	write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CPY */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CREATE CONCAT PATH */
+    if(strcpy(catpath, path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+    if(strcat(catpath, "/") == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+    if(strcat(catpath, dirname) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+
+    /* IS FILE OF CURRENT PATH CHECKING */
+    if(!is_dir_of_currentpath(cmd->cmd_client, dirname)){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	fprintf(stderr, "Erreur is_dir_of_currentpath: %s inexistant dans le répertoire courant.\n", dirname);
+	return;
+    }
+
+    /* REMOVE DIR */
+    if(rmdir(catpath) == -1){
+	perror("Erreur remove");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+    /* ALL IS OK, DIR REMOVED */
+    printf("File %s was removed.\n", dirname);
+    write_socket(sock_user, "250 Requested file action okay, completed.\r\n");
+    return;
+}
+
+void process_mkd(struct s_cmd * cmd)
+{
+    int sock_user;
+    char dirname[PATHNAME_MAXLEN+1];
+    char path[PATHNAME_MAXLEN+1];
+    char catpath[PATHNAME_MAXLEN+1];
+    char buf[PATHNAME_MAXLEN+1];
+
+    sock_user = cmd->cmd_client->cli_sock;
+  
+    /* ARGUMENT */
+    if(strcpy(dirname, cmd->cmd_args_field) == NULL){
+	write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CPY */
+    if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+
+    /* CREATE CONCAT PATH */
+    if(strcpy(catpath, path) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+        perror("Erreur strcpy");
+	return;
+    }
+    if(strcat(catpath, "/") == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+    if(strcat(catpath, dirname) == NULL){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	perror("Erreur strcat");
+	return;
+    }
+
+    /* CHECK IF THE DIR ALREADY EXISTE */
+    if(is_dir_of_currentpath(cmd->cmd_client, dirname)){
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	fprintf(stderr, "Erreur is_dir_of_currentpath: %s existe deja dans le répertoire courant.\n", dirname);
+	return;
+    }
+
+    /* CREATE DIR */
+    if(mkdir(catpath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1){
+	perror("Erreur mkdir");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+
+    /* ALL IS OK, DIR CREATED */
+    printf("File %s was created.\n", dirname);
+    snprintf(buf, BUF_SIZE, "257 \"%s\" created.\r\n", dirname);
+    write_socket(sock_user, buf);
+    return;
+}
 
 void process_retr(struct s_cmd * cmd)
 {
