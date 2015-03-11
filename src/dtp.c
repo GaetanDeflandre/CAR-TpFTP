@@ -238,7 +238,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 	char *lf, *str_start, *with_cr_str = NULL;
 	int fd;
 	size_t new_str_size=0;
-	ssize_t ret, nb_written_chars=0;
+	ssize_t ret_write, ret_read, nb_written_chars=0;
 	
 	memset(buf, 0, BUF_SIZE + 1);
 	
@@ -255,9 +255,9 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		return -2;
 	}
 	
-	while ((ret = read(fd, buf, BUF_SIZE)) != 0)
+	while ((ret_read = read(fd, buf, BUF_SIZE)) != 0)
 	{		
-		if (ret < 0)
+		if (ret_read < 0)
 		{
 			perror("Erreur read_file (read): ");
 			close(fd);
@@ -265,7 +265,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		}
 		
 		str_start = buf;
-		while((lf = strchr(str_start, '\n')) != NULL)
+		while(str_start < buf + ret_read && (lf = strchr(str_start, '\n')) != NULL)
 		{
 			*lf = '\0';
 			if (with_cr_str == NULL)
@@ -311,7 +311,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		if (with_cr_str != NULL)
 		{
 			printf("str : %s\n", with_cr_str);
-			if ((ret = write(dc->dc_socket, with_cr_str, strlen(with_cr_str))) < 0)
+			if ((ret_write = write(dc->dc_socket, with_cr_str, strlen(with_cr_str))) < 0)
 			{
 				perror("Erreur send_file (write)");
 				close(fd);
@@ -320,7 +320,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 			}
 			
 			/* Ecriture du bout de la chaine qui ne contient pas de \n */
-			if ((ret = write(dc->dc_socket, str_start, strlen(str_start))) < 0)
+			if ((ret_write = write(dc->dc_socket, str_start, (buf + ret_read) - str_start)) < 0)
 			{
 				perror("Erreur send_file (write)");
 				close(fd);
@@ -334,7 +334,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		}
 		else
 		{
-			if ((ret = write(dc->dc_socket, buf, strlen(buf))) < 0)
+			if ((ret_write = write(dc->dc_socket, buf, strlen(buf))) < 0)
 			{
 				perror("Erreur send_file (write)");
 				close(fd);
@@ -343,7 +343,7 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 			memset(buf, 0, BUF_SIZE + 1);
 		}
 		
-		nb_written_chars += ret;
+		nb_written_chars += ret_write;
 	}
 	
 	/////////////////////
