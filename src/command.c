@@ -29,6 +29,7 @@
 #define CODE_DELE "DELE"
 #define CODE_RETR "RETR"
 #define CODE_STOR "STOR"
+#define CODE_TYPE "TYPE"
 
 /* CREATION DE COMMANDES */
 struct s_cmd * new_user(char * args);
@@ -45,6 +46,7 @@ struct s_cmd * new_mkd(char * args);
 struct s_cmd * new_dele(char * args);
 struct s_cmd * new_retr(char * args);
 struct s_cmd * new_stor(char * args);
+struct s_cmd * new_type(char * args);
 
 /* HANDLERS DES COMMANDES */
 void process_user(struct s_cmd * cmd);
@@ -61,105 +63,110 @@ void process_mkd(struct s_cmd * cmd);
 void process_dele(struct s_cmd * cmd);
 void process_retr(struct s_cmd * cmd);
 void process_stor(struct s_cmd * cmd);
+void process_type(struct s_cmd * cmd);
 
 void not_implemented_command(struct s_client * client);
 
 struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 {
-        struct s_cmd * cmd;
-        char *request_code, *request_args;
-        char * crlf;
-        char request_line[MAX_REQUEST_LENGTH];
-        
-        /* Si la requete est trop longue. */
-        if (strlen(client_request) > MAX_REQUEST_LENGTH -1)
-        {
-                fprintf(stderr, "Erreur init_cmd: La requete est trop longue.\n");
-                return NULL;
-        }
-        
-        strncpy(request_line, client_request, MAX_REQUEST_LENGTH);
-        
-        /* Elimination du CRLF en fin de requete. */
-        crlf = strstr(request_line, "\r\n");
-        if (crlf != NULL)
-                *crlf = '\0';
-        else
-        {
-                fprintf(stderr, "Erreur init_cmd: La requete ne termine pas par <CRLF>.\n");
-                return NULL;
-        }
-        
-        request_code = strtok(request_line, " \f\n\r\t\v");
-        request_args = strtok(NULL, ""); // Le reste de la chaine.
-        
-        if (strncasecmp(request_code, CODE_USER, strlen(request_code)) == 0)
-        {
-                cmd = new_user(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_PASS, strlen(request_code)) == 0)
-        {
-                cmd = new_pass(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_QUIT, strlen(request_code)) == 0)
-        {
-                cmd = new_quit(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_SYST, strlen(request_code)) == 0)
-        {
-                cmd = new_syst(request_args);
-        }
+	struct s_cmd * cmd;
+	char *request_code, *request_args;
+	char * crlf;
+	char request_line[MAX_REQUEST_LENGTH];
+	
+	/* Si la requete est trop longue. */
+	if (strlen(client_request) > MAX_REQUEST_LENGTH -1)
+	{
+		fprintf(stderr, "Erreur init_cmd: La requete est trop longue.\n");
+		return NULL;
+	}
+	
+	strncpy(request_line, client_request, MAX_REQUEST_LENGTH);
+	
+	/* Elimination du CRLF en fin de requete. */
+	crlf = strstr(request_line, "\r\n");
+	if (crlf != NULL)
+		*crlf = '\0';
+	else
+	{
+		fprintf(stderr, "Erreur init_cmd: La requete ne termine pas par <CRLF>.\n");
+		return NULL;
+	}
+	
+	request_code = strtok(request_line, " \f\n\r\t\v");
+	request_args = strtok(NULL, ""); // Le reste de la chaine.
+	
+	if (strncasecmp(request_code, CODE_USER, strlen(request_code)) == 0)
+	{
+		cmd = new_user(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_PASS, strlen(request_code)) == 0)
+	{
+		cmd = new_pass(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_QUIT, strlen(request_code)) == 0)
+	{
+		cmd = new_quit(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_SYST, strlen(request_code)) == 0)
+	{
+		cmd = new_syst(request_args);
+	}
 	else if (strncasecmp(request_code, CODE_FEAT, strlen(request_code)) == 0)
-        {
-                cmd = new_feat(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_PORT, strlen(request_code)) == 0)
-        {
-                cmd = new_port(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_LIST, strlen(request_code)) == 0)
-        {
-                cmd = new_list(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_PWD, strlen(request_code)) == 0)
-        {
-                cmd = new_pwd(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_CWD, strlen(request_code)) == 0)
-        {
-                cmd = new_cwd(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_DELE, strlen(request_code)) == 0)
-        {
-                cmd = new_dele(request_args);
-        }
+	{
+		cmd = new_feat(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_PORT, strlen(request_code)) == 0)
+	{
+		cmd = new_port(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_LIST, strlen(request_code)) == 0)
+	{
+		cmd = new_list(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_PWD, strlen(request_code)) == 0)
+	{
+		cmd = new_pwd(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_CWD, strlen(request_code)) == 0)
+	{
+		cmd = new_cwd(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_DELE, strlen(request_code)) == 0)
+	{
+		cmd = new_dele(request_args);
+	}
 	else if (strncasecmp(request_code, CODE_RMD, strlen(request_code)) == 0)
-        {
-                cmd = new_rmd(request_args);
-        }
+	{
+			cmd = new_rmd(request_args);
+	}
 	else if (strncasecmp(request_code, CODE_MKD, strlen(request_code)) == 0)
-        {
-                cmd = new_mkd(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_RETR, strlen(request_code)) == 0)
-        {
-                cmd = new_retr(request_args);
-        }
-        else if (strncasecmp(request_code, CODE_STOR, strlen(request_code)) == 0)
-        {
-                cmd = new_stor(request_args);
-        } 
+	{
+		cmd = new_mkd(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_RETR, strlen(request_code)) == 0)
+	{
+		cmd = new_retr(request_args);
+	}
+	else if (strncasecmp(request_code, CODE_STOR, strlen(request_code)) == 0)
+	{
+		cmd = new_stor(request_args);
+	} 
+	else if (strncasecmp(request_code, CODE_TYPE, strlen(request_code)) == 0)
+	{
+		cmd = new_type(request_args);
+	} 
 	else 
 	{
-	        cmd = NULL;
+        cmd = NULL;
 	}
-        
-        if (cmd != NULL)
-        {
-                cmd->cmd_client = client;
-        }
-                
-        return cmd;
+	
+	if (cmd != NULL)
+	{
+		cmd->cmd_client = client;
+	}
+			
+	return cmd;
 }
 
 void not_implemented_command(struct s_client * client){
@@ -467,14 +474,14 @@ struct s_cmd * new_retr(char * args)
         cmd = malloc(sizeof(struct s_cmd));
         if (cmd == NULL)
         {
-                fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
-                return NULL;
+			fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+			return NULL;
         }
         
         if (args != NULL)
         {
-                request_args = malloc((strlen(args) + 1) * sizeof(char));
-                strcpy(request_args, args);
+			request_args = malloc((strlen(args) + 1) * sizeof(char));
+			strcpy(request_args, args);
         }
                 
         cmd->cmd_t = CMD_RETR;
@@ -507,6 +514,31 @@ struct s_cmd * new_stor(char * args)
         cmd->cmd_args_field = request_args;
         
         return cmd;
+}
+
+struct s_cmd * new_type(char * args)
+{
+	struct s_cmd * cmd;
+	char * request_args = NULL;
+	
+	cmd = malloc(sizeof(struct s_cmd));
+	if (cmd == NULL)
+	{
+		fprintf(stderr, "Erreur new_user: Erreur d'allocation de memoire.\n");
+		return NULL;
+	}
+	
+	if (args != NULL)
+	{
+		request_args = malloc((strlen(args) + 1) * sizeof(char));
+		strcpy(request_args, args);
+	}
+			
+	cmd->cmd_t = CMD_TYPE;
+	cmd->cmd_h = process_type;
+	cmd->cmd_args_field = request_args;
+	
+	return cmd;
 }
 
 /* HANDLERS DES COMMANDES */
@@ -1152,8 +1184,10 @@ void process_retr(struct s_cmd * cmd)
 			write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
 		}
 			
-			
-		ret = send_file(path, dc);
+		if (dc->dc_transfer_t == TYPE_ASCII)
+			ret = send_ascii_file(path, dc);
+		else
+			ret = send_binary_file(path, dc);
 			
 		if (ret == -2)
 		{
@@ -1241,8 +1275,10 @@ void process_stor(struct s_cmd * cmd)
 			write_socket(sock_user_PI, "125 Data connection already open; transfer starting.\r\n");         
 			}
 			
-			
-		ret = read_file(path, dc);
+		if (dc->dc_transfer_t == TYPE_ASCII)
+			ret = read_ascii_file(path, dc);
+		else
+			ret = read_binary_file(path, dc);
 			
 		if (ret == -2)
 			{
@@ -1264,6 +1300,55 @@ void process_stor(struct s_cmd * cmd)
 		write_socket(sock_user_PI, "550 Requested file action not taken.\r\n");
 	}
         
+    return;
+}
+
+void process_type(struct s_cmd * cmd)
+{
+	struct s_client * client;
+	int sock_user_PI;
+	char * type_arg;
+	enum data_transfer_type new_type;
+	
+	client = cmd->cmd_client;
+	sock_user_PI = client->cli_sock;
+
+    if(cmd->cmd_args_field == NULL)
+    {
+        write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
+		return;
+    }
+    
+    type_arg = strtok(cmd->cmd_args_field, " \f\n\r\t\v");
+    
+    if (strncasecmp(type_arg, "A", strlen(type_arg)) == 0)
+	{
+		new_type = TYPE_ASCII;
+	}
+	else if (strncasecmp(type_arg, "I", strlen(type_arg)) == 0)
+	{
+		new_type = TYPE_BINARY;
+	}
+	else
+	{
+		write_socket(sock_user_PI, "501 Syntax error in parameters or arguments.\r\n");
+		return;
+	}
+    
+    if (strtok(NULL, " \f\n\r\t\v") != NULL)
+    {
+		write_socket(sock_user_PI, "504 Command not implemented for that parameter.\r\n");
+		return;
+	}
+
+    /* Command okay. */
+    write_socket(sock_user_PI, "200 Command okay.\r\n");
+    
+    if (new_type == TYPE_ASCII)
+		set_transfer_t_ascii(client->cli_data_connection);
+	else if (new_type == TYPE_BINARY)
+		set_transfer_t_binary(client->cli_data_connection);
+		
     return;
 }
 

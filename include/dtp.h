@@ -11,8 +11,10 @@
  * connexion de données FTP avec le client.
  */
 
+/** Mode de transfert de données : passif ou non. */
+enum data_transfer_mode {DT_ACTIVE, DT_PASSIVE};
 /** Type de transfert de données : passif ou non. */
-enum data_transfer_type {DT_ACTIVE, DT_PASSIVE};
+enum data_transfer_type {TYPE_ASCII, TYPE_BINARY};
 
 struct s_data_connection
 {
@@ -23,8 +25,10 @@ struct s_data_connection
     int dc_socket;
     /** Adresse du client pour le transfert de données (avec le port) */
     struct sockaddr_in dc_addr;
+    /** Mode de transfert de données */
+    enum data_transfer_mode dc_transfer_m;    
     /** Type de transfert de données */
-    enum data_transfer_type dc_transfer_t;
+    enum data_transfer_type dc_transfer_t;    
 };
 
 /**
@@ -65,18 +69,30 @@ int close_data_connection(struct s_data_connection * dc);
 void set_port(struct s_data_connection * dc, unsigned short port);
 
 /**
- * Fixe le type de connexion au type actif.
+ * Fixe le mode de connexion au type actif.
  * @param[in] dc un pointeur vers la structure à modifier.
  *  
  */
-void set_transfer_t_active(struct s_data_connection * dc);
+void set_transfer_m_active(struct s_data_connection * dc);
 
-/** Fixe le type de connexion au type passif.
+/** Fixe le mode de connexion au type passif.
  * @param[in] dc un pointeur vers la structure à modifier.
  *  */
-void set_transfer_t_passive(struct s_data_connection * dc);
+void set_transfer_m_passive(struct s_data_connection * dc);
 
-/** Fixe le type de connexion au type actif.
+/**
+ * Fixe le type de connexion au type ascii.
+ * @param[in] dc un pointeur vers la structure à modifier.
+ *  
+ */
+void set_transfer_t_ascii(struct s_data_connection * dc);
+
+/** Fixe le type de connexion au type binaire.
+ * @param[in] dc un pointeur vers la structure à modifier.
+ *  */
+void set_transfer_t_binary(struct s_data_connection * dc);
+
+/** 
  * @param[in] dc un pointeur vers la structure.
  * 
  * @return vrai (1) si la connexion est ouverte, faux (0) sinon.
@@ -95,7 +111,7 @@ ssize_t write_data(char * message, struct s_data_connection * dc);
 
 /**
  * Crée un fichier et y inscrit le contenu d'un fichier lu via la 
- * connexion de données.
+ * connexion de données avec le type binary.
  * @param[in] dc un pointeur vers la structure de la connexion.
  * @param[in] pathname le chemin du fichier à créer.
  * 
@@ -105,10 +121,39 @@ ssize_t write_data(char * message, struct s_data_connection * dc);
  * 			-3 si problème de lecture<br/>
  * 			-4 si problème d'écriture<br/>
  */
-ssize_t read_file(char * pathname, struct s_data_connection * dc);
+ssize_t read_binary_file(char * pathname, struct s_data_connection * dc);
 
 /**
- * Lit un fichier et en envoie le contenu via la connexion de données.
+ * Lit un fichier et en envoie le contenu via la connexion de données
+ * avec le type binary.
+ * @param[in] dc un pointeur vers la structure de la connexion.
+ * @param[in] pathname le chemin du fichier à envoyer.
+ * 
+ * @return le nombre d'octets envoyés ou en cas d'erreur :
+ * 			-1 si pas de connexion ouverte<br/>
+ * 			-2 si la création échoue<br/>
+ * 			-3 si problème de lecture<br/>
+ * 			-4 si problème d'écriture<br/>
+ */
+ssize_t send_binary_file(char * pathname, struct s_data_connection * dc);
+
+/**
+ * Crée un fichier et y inscrit le contenu d'un fichier lu via la 
+ * connexion de données avec le type ascii.
+ * @param[in] dc un pointeur vers la structure de la connexion.
+ * @param[in] pathname le chemin du fichier à créer.
+ * 
+ * @return le nombre d'octets lus ou en cas d'erreur :
+ * 			-1 si pas de connexion ouverte<br/>
+ * 			-2 si la création échoue<br/>
+ * 			-3 si problème de lecture<br/>
+ * 			-4 si problème d'écriture<br/>
+ */
+ssize_t read_ascii_file(char * pathname, struct s_data_connection * dc);
+
+/**
+ * Lit un fichier et en envoie le contenu via la connexion de données
+ * avec le type ascii.
  * @param[in] dc un pointeur vers la structure de la connexion.
  * @param[in] pathname le chemin du fichier à envoyer.
  * 
@@ -119,7 +164,7 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc);
  * 			-4 si problème d'écriture<br/>
  * 			-5 si autre problème<br/>
  */
-ssize_t send_file(char * pathname, struct s_data_connection * dc);
+ssize_t send_ascii_file(char * pathname, struct s_data_connection * dc);
 
 
 #endif /* DTP_H_ */

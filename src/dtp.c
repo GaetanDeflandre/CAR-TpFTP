@@ -24,7 +24,8 @@ struct s_data_connection * new_data_connection(struct sockaddr_in data_addr)
 	dc->dc_socket = -1;
 	data_addr.sin_port = data_addr.sin_port;
 	dc->dc_addr = data_addr;
-	dc->dc_transfer_t = DT_ACTIVE;
+	dc->dc_transfer_m = DT_ACTIVE;
+	dc->dc_transfer_t = TYPE_ASCII;
 	
 	return dc;
 }
@@ -40,7 +41,7 @@ int open_data_connection(struct s_data_connection * dc)
 		return -1;
 	}
 	
-	if (dc->dc_transfer_t == DT_ACTIVE)
+	if (dc->dc_transfer_m == DT_ACTIVE)
 	{
 		dc->dc_socket = socket(AF_INET, SOCK_STREAM, 0);
 		setsockopt(dc->dc_socket, SOL_SOCKET, SO_REUSEADDR, &sock_opt_reuse_addr, sizeof(int));
@@ -66,7 +67,7 @@ int open_data_connection(struct s_data_connection * dc)
 			return -1;
 		}
 	}
-	else if (dc->dc_transfer_t == DT_PASSIVE)
+	else if (dc->dc_transfer_m == DT_PASSIVE)
 	{
 		fprintf(stderr, "Passive mode NYI !\n");
 		return -1;
@@ -98,14 +99,24 @@ void set_port(struct s_data_connection * dc, unsigned short port)
 	dc->dc_addr.sin_port = htons(port);
 }
 
-void set_transfer_t_active(struct s_data_connection * dc)
+void set_transfer_m_active(struct s_data_connection * dc)
 {
-	dc->dc_transfer_t = DT_ACTIVE;
+	dc->dc_transfer_m = DT_ACTIVE;
 }
 
-void set_transfer_t_passive(struct s_data_connection * dc)
+void set_transfer_m_passive(struct s_data_connection * dc)
 {
-	dc->dc_transfer_t = DT_PASSIVE;
+	dc->dc_transfer_m = DT_PASSIVE;
+}
+
+void set_transfer_t_ascii(struct s_data_connection * dc)
+{
+	dc->dc_transfer_t = TYPE_ASCII;
+}
+
+void set_transfer_t_binary(struct s_data_connection * dc)
+{
+	dc->dc_transfer_t = TYPE_BINARY;
 }
 
 int is_data_connection_opened(struct s_data_connection * dc)
@@ -128,7 +139,96 @@ ssize_t write_data(char * message, struct s_data_connection * dc)
 	return write_socket(dc->dc_socket, buf);
 }
 
-ssize_t read_file(char * pathname, struct s_data_connection * dc)
+ssize_t read_binary_file(char * pathname, struct s_data_connection * dc)
+{
+	char buf[BUF_SIZE + 1];
+	int fd;
+	ssize_t ret, nb_read_chars=0;
+	
+	memset(buf, 0, BUF_SIZE + 1);
+	
+	if (!is_data_connection_opened(dc))
+	{
+		fprintf(stderr, "Erreur read_file: Connexion données non-ouverte.\n");
+		return -1;
+	}
+	
+	fd = creat(pathname, S_IRWXU | S_IRWXG | S_IRWXO);
+	if (fd < 0)
+	{
+		perror("Erreur read_file (creat): ");
+		return -2;
+	}
+	
+	while ((ret = read(dc->dc_socket, buf, BUF_SIZE)) != 0)
+	{
+		if (ret < 0)
+		{
+			perror("Erreur read_file (read): ");
+			unlink(pathname);
+			close(fd);
+			return -3;
+		}
+		
+		if (write(fd, buf, ret) < 0)
+		{
+			perror("Erreur read_file (write): ");
+			close(fd);
+			return -4;
+		}
+		
+		nb_read_chars += ret;
+	}
+	
+	close(fd);
+	return nb_read_chars;
+}
+
+ssize_t send_binary_file(char * pathname, struct s_data_connection * dc)
+{
+	char buf[BUF_SIZE + 1];
+	int fd;
+	ssize_t ret_write, ret_read, nb_written_chars=0;
+	
+	memset(buf, 0, BUF_SIZE + 1);
+	
+	if (!is_data_connection_opened(dc))
+	{
+		fprintf(stderr, "Erreur send_file: Connexion données non-ouverte.\n");
+		return -1;
+	}
+	
+	fd = open(pathname, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("Erreur send_file (open): ");
+		return -2;
+	}
+	
+	while ((ret_read = read(fd, buf, BUF_SIZE)) != 0)
+	{		
+		if (ret_read < 0)
+		{
+			perror("Erreur read_file (read): ");
+			close(fd);
+			return -3;
+		}
+		
+		if ((ret_write = write(dc->dc_socket, buf, ret_read)) < 0)
+		{
+			perror("Erreur send_file (write)");
+			close(fd);
+			return -4;
+		}
+		
+		nb_written_chars += ret_write;
+	}
+	
+	close(fd);
+	return nb_written_chars;
+}
+
+ssize_t read_ascii_file(char * pathname, struct s_data_connection * dc)
 {
 	char buf[BUF_SIZE + 1];
 	int fd;
@@ -170,6 +270,7 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 				if (write(fd, str_start, strlen(str_start)) < 0)
 				{
 					perror("Erreur read_file (write): ");
+					close(fd);
 					return -4;
 				}
 			}
@@ -188,51 +289,12 @@ ssize_t read_file(char * pathname, struct s_data_connection * dc)
 		
 		nb_read_chars += ret;
 	}
-		
-		////////////////////////
-		//~ nl_found = 0;
-		//~ 
-		//~ if (ret < 0)
-		//~ {
-			//~ perror("Erreur read_file (read): ");
-			//~ unlink(pathname);
-			//~ close(fd);
-			//~ return -3;
-		//~ }
-		//~ 
-		//~ nl_start = buf;
-		//~ while((crlf = strstr(nl_start, "\r\n")) != NULL && nl_start - buf < BUF_SIZE + 1)
-		//~ {
-			//~ nl_found = 1;
-			//~ *crlf = '\n';
-			//~ *(crlf + 1) = '\0';
-			//~ 
-			//~ if (write(fd, nl_start, strlen(nl_start)) < 0)
-			//~ {
-				//~ perror("Erreur read_file (write): ");
-				//~ return -4;
-			//~ }
-			//~ 
-			//~ nl_start += strlen(nl_start) + 1;
-		//~ }
-		//~ 
-		//~ if (!nl_found)
-		//~ {
-			//~ if (write(fd, buf, strlen(buf)) < 0)
-			//~ {
-				//~ perror("Erreur read_file (write): ");
-				//~ return -4;
-			//~ }
-		//~ }
-		//~ 
-		//~ nb_read_chars += ret;
-	//~ }
 	
 	close(fd);
 	return nb_read_chars;
 }
 
-ssize_t send_file(char * pathname, struct s_data_connection * dc)
+ssize_t send_ascii_file(char * pathname, struct s_data_connection * dc)
 {
 	char buf[BUF_SIZE + 1];
 	char *lf, *str_start, *with_cr_str = NULL;
@@ -310,7 +372,6 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		
 		if (with_cr_str != NULL)
 		{
-			printf("str : %s\n", with_cr_str);
 			if ((ret_write = write(dc->dc_socket, with_cr_str, strlen(with_cr_str))) < 0)
 			{
 				perror("Erreur send_file (write)");
@@ -345,24 +406,6 @@ ssize_t send_file(char * pathname, struct s_data_connection * dc)
 		
 		nb_written_chars += ret_write;
 	}
-	
-	/////////////////////
-	//~ while ((ret = read(fd, buf, BUF_SIZE+1)) != 0)
-	//~ {
-		//~ if (ret < 0)
-		//~ {
-			//~ perror("Erreur send_file (read): ");
-			//~ return -3;
-		//~ }
-		//~ 
-		//~ if (write(dc->dc_socket, buf, BUF_SIZE+1) < 0)
-		//~ {
-			//~ perror("Erreur send_file (write): ");
-			//~ return -4;
-		//~ }
-		//~ 
-		//~ nb_read_chars += ret;
-	//~ }
 	
 	close(fd);
 	return nb_written_chars;
