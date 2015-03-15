@@ -138,7 +138,7 @@ struct s_cmd * init_cmd(char * client_request, struct s_client * client)
 	}
 	else if (strncasecmp(request_code, CODE_RMD, strlen(request_code)) == 0)
 	{
-			cmd = new_rmd(request_args);
+		cmd = new_rmd(request_args);
 	}
 	else if (strncasecmp(request_code, CODE_MKD, strlen(request_code)) == 0)
 	{
@@ -854,7 +854,8 @@ void process_list(struct s_cmd * cmd)
 
 void process_pwd(struct s_cmd * cmd)
 {
-    char buf[PATHNAME_MAXLEN+1];
+    char buf[BUF_SIZE+1];
+    char pwd_path[PATHNAME_MAXLEN+1];
     struct s_client * client;
     int sock_user;
 
@@ -872,9 +873,32 @@ void process_pwd(struct s_cmd * cmd)
 	write_socket(sock_user, "550 Requested action not taken.\r\n");
 	return;
     }
+    if( client->cli_root_path == NULL){
+	fprintf(stderr, "Erreur: le champ cli_root_path vaut NULL.\n");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
 
-    /* NORMAL CASE */
-    snprintf(buf, BUF_SIZE, "257 \"%s\" created.\r\n", client->cli_current_path);
+    /* ROOT CASE */
+    if(strcmp(client->cli_current_path, client->cli_root_path) == 0){
+	write_socket(sock_user, "257 \"/\" created.\r\n");
+	return;
+    }
+
+    /* NORMAL CASE */ 
+    if(strcpy(pwd_path, strchr(client->cli_current_path, '/')+1) == NULL){
+	perror("Erreur strcpy");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+
+    if(strcpy(pwd_path, strchr(pwd_path, '/')+1) == NULL){
+	perror("Erreur strcpy");
+	write_socket(sock_user, "550 Requested action not taken.\r\n");
+	return;
+    }
+
+    snprintf(buf, BUF_SIZE, "257 \"%s\" created.\r\n", pwd_path);
     write_socket(sock_user, buf);
     return;
 
