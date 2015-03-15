@@ -889,6 +889,12 @@ void process_cwd(struct s_cmd * cmd)
     char* lastchr;
 
     sock_user = cmd->cmd_client->cli_sock;
+    
+    if (cmd->cmd_args_field == NULL || strcmp("", cmd->cmd_args_field) == 0)
+    {
+		write_socket(sock_user, "501 Syntax error in parameters or arguments.\r\n");
+		return;
+	}
   
     /* ARGUMENT */
     if(strcpy(path, cmd->cmd_client->cli_current_path) == NULL){
